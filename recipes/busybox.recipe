@@ -1,0 +1,43 @@
+# BusyBox: shell (ash), core utilities, editor (vi), device manager (mdev),
+# module loader, DHCP client. One static binary; every command is a link to it.
+NAME=busybox
+VERSION=1.36.1
+SOURCE_GIT=https://github.com/mirror/busybox
+SOURCE_REF=1_36_1
+INPUTS="config/busybox"
+
+build() {
+    local bmake=(make -C "$SRC" O="$BUILD" -j"$JOBS")
+    "${bmake[@]}" defconfig >/dev/null
+
+    # Apply our overrides: drop any existing line for the symbol, append ours.
+    local line sym
+    while IFS= read -r line; do
+        case "$line" in
+            CONFIG_*=*)              sym="${line%%=*}" ;;
+            "# CONFIG_"*" is not set") sym="${line#\# }"; sym="${sym%% *}" ;;
+            *) continue ;;
+        esac
+        sed -i -e "/^$sym=/d" -e "/^# $sym is not set/d" "$BUILD/.config"
+        echo "$line" >> "$BUILD/.config"
+    done < "$ROOT/config/busybox/overrides"
+
+    # Compile against musl and our kernel's headers.
+    sed -i "s|^CONFIG_EXTRA_CFLAGS=.*|CONFIG_EXTRA_CFLAGS=\"-isystem $SYSROOT/include\"|" "$BUILD/.config"
+    { yes "" || true; } | "${bmake[@]}" oldconfig >/dev/null
+
+    "${bmake[@]}" CC="$TARGET_CC" HOSTCC=gcc busybox
+}
+
+install() {
+    mkdir -p "$ROOTFS/system/bin"
+    cp "$BUILD/busybox" "$ROOTFS/system/bin/busybox"
+    chmod 0755 "$ROOTFS/system/bin/busybox"
+    # One link per command, all in /system/bin. The binary is static, so we
+    # can ask it for its own command list on the build machine.
+    local cmd
+    for cmd in $("$BUILD/busybox" --list); do
+        case "$cmd" in busybox) continue ;; esac
+        [ -e "$ROOTFS/system/bin/$cmd" ] || ln -s busybox "$ROOTFS/system/bin/$cmd"
+    done
+}

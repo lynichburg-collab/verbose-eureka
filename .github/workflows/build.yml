@@ -1,0 +1,44 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install host tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq musl-tools qemu-system-x86 bc flex bison \
+            libelf-dev libssl-dev cpio rsync kmod
+
+      - name: Allow QEMU to use KVM
+        run: |
+          if [ -e /dev/kvm ]; then
+            echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+              | sudo tee /etc/udev/rules.d/99-kvm.rules
+            sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+          fi
+
+      - name: Build
+        run: ./build.sh
+
+      - name: Boot test in QEMU
+        run: ./build.sh test
+
+      - name: Upload kernel and root filesystem
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verbose-eureka-${{ github.sha }}
+          path: |
+            out/kernel
+            out/rootfs.cpio.gz
+            out/boot-test.log
+          if-no-files-found: warn

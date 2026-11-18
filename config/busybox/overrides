@@ -1,0 +1,18 @@
+# Changes applied on top of BusyBox's defconfig. One setting per line, in
+# .config syntax. The recipe applies them and runs oldconfig.
+
+# Single static binary, no shared libraries needed at runtime.
+CONFIG_STATIC=y
+
+# We have our own init (src/init). halt/poweroff/reboot signal PID 1.
+# CONFIG_INIT is not set
+# CONFIG_LINUXRC is not set
+# CONFIG_FEATURE_CALL_TELINIT is not set
+
+# Our filesystem layout.
+CONFIG_DEFAULT_MODULES_DIR="/system/modules"
+CONFIG_UDHCPC_DEFAULT_SCRIPT="/system/lib/net/udhcpc.script"
+
+# Does not build against current kernel headers (uses removed CBQ API).
+# CONFIG_TC is not set
+# CONFIG_FEATURE_TC_INGRESS is not set

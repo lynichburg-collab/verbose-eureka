@@ -1,0 +1,26 @@
+#!/system/bin/sh
+# Called by udhcpc when a DHCP lease changes. Applies the address, the
+# default route and DNS servers.
+export PATH=/system/bin
+[ -n "$interface" ] || exit 1
+
+case "$1" in
+    deconfig)
+        ip addr flush dev "$interface"
+        ip link set "$interface" up
+        ;;
+    bound|renew)
+        ip addr flush dev "$interface"
+        ip addr add "$ip/${mask:-24}" ${broadcast:+broadcast "$broadcast"} dev "$interface"
+        if [ -n "$router" ]; then
+            ip route del default dev "$interface" 2>/dev/null
+            for r in $router; do
+                ip route add default via "$r" dev "$interface" && break
+            done
+        fi
+        : > /run/resolv.conf
+        [ -n "$domain" ] && echo "search $domain" >> /run/resolv.conf
+        for s in $dns; do echo "nameserver $s" >> /run/resolv.conf; done
+        ;;
+esac
+exit 0

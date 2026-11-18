@@ -1,0 +1,44 @@
+# The Linux kernel, configured for a generic x86_64 machine.
+NAME=linux
+VERSION=7.3.5
+SOURCE_GIT=https://github.com/gregkh/linux
+SOURCE_REF=v7.3.5
+INPUTS="config/linux"
+
+build() {
+    local kmake=(make -C "$SRC" O="$BUILD" ARCH=x86_64 -j"$JOBS")
+    # Start from the upstream x86_64 defaults, then apply our changes on top.
+    "${kmake[@]}" x86_64_defconfig
+    "$SRC/scripts/kconfig/merge_config.sh" -m -O "$BUILD" \
+        "$BUILD/.config" "$ROOT/config/linux/generic.fragment"
+    "${kmake[@]}" olddefconfig
+
+    # Fail loudly if a setting we rely on was dropped by Kconfig.
+    local want missing=0
+    while read -r want; do
+        case "$want" in ''|\#*) continue ;; esac
+        grep -qxF "$want" "$BUILD/.config" || { echo "kernel config: $want did not stick" >&2; missing=1; }
+    done < "$ROOT/config/linux/required"
+    [ "$missing" = 0 ] || return 1
+
+    "${kmake[@]}" bzImage modules
+
+    # Kernel headers for building userland against (installed to the sysroot).
+    rm -rf "$SYSROOT/include"
+    "${kmake[@]}" INSTALL_HDR_PATH="$SYSROOT" headers_install
+
+    # Install modules into a staging dir and move them to our layout.
+    rm -rf "$BUILD/stage"
+    "${kmake[@]}" INSTALL_MOD_PATH="$BUILD/stage" INSTALL_MOD_STRIP=1 modules_install
+    "${kmake[@]}" -s kernelrelease > "$BUILD/kernel.release"
+}
+
+install() {
+    local rel
+    rel="$(cat "$BUILD/kernel.release")"
+    mkdir -p "$OUT" "$ROOTFS/system/modules"
+    cp "$BUILD/arch/x86/boot/bzImage" "$OUT/kernel"
+    cp -a "$BUILD/stage/lib/modules/$rel" "$ROOTFS/system/modules/"
+    # These point back into the build tree and are useless on the target.
+    rm -f "$ROOTFS/system/modules/$rel/build" "$ROOTFS/system/modules/$rel/source"
+}

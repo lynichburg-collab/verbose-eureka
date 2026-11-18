@@ -1,0 +1,7 @@
+# Which program runs on which terminal. init starts each one at boot and
+# restarts it when it exits.   <tty>  <command> [args...]
+#
+# Development mode: straight to a root shell, no login. The login prompt
+# arrives with user accounts (next milestone).
+tty1    /system/bin/sh -l
+ttyS0   /system/bin/sh -l

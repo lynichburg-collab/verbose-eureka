@@ -1,0 +1,15 @@
+# Read by every login shell.
+export PATH=/system/bin
+export HOME="${HOME:-/home/root}"
+export EDITOR=vi
+export PAGER=less
+umask 022
+
+. /config/os-release
+if [ "$(id -u)" = 0 ]; then
+    PS1='\[\e[1;31m\]\h\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]# '
+else
+    PS1='\[\e[1;32m\]\u@\h\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]$ '
+fi
+cd "$HOME" 2>/dev/null
+[ -f /system/share/motd ] && cat /system/share/motd
