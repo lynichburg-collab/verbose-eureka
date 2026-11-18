@@ -72,6 +72,24 @@ static void say(const char *fmt, ...)
     va_end(ap);
 }
 
+/* Add a line to the activity log (same format as `recorder note`). */
+static void activity(const char *kind, const char *fmt, ...)
+{
+    char stamp[32], text[256];
+    time_t now = time(NULL);
+    va_list ap;
+
+    strftime(stamp, sizeof stamp, "%Y-%m-%d %H:%M:%S", localtime(&now));
+    va_start(ap, fmt);
+    vsnprintf(text, sizeof text, fmt, ap);
+    va_end(ap);
+    int fd = open("/var/log/activity", O_WRONLY | O_APPEND | O_CREAT | O_CLOEXEC, 0600);
+    if (fd < 0)
+        return;
+    dprintf(fd, "%s  %-7s %s\n", stamp, kind, text);
+    close(fd);
+}
+
 static void mount_fs(const char *src, const char *dst, const char *type,
                      unsigned long flags, const char *opts)
 {
@@ -90,8 +108,9 @@ static void mount_kernel_filesystems(void)
     mount_fs("devpts", "/dev/pts", "devpts", MS_NOSUID | MS_NOEXEC,
              "gid=5,mode=0620,ptmxmode=0666");
     mount_fs("shm", "/dev/shm", "tmpfs", MS_NOSUID | MS_NODEV, "mode=1777");
-    mount_fs("run", "/run", "tmpfs", MS_NOSUID | MS_NODEV, "mode=0755");
-    mount_fs("tmp", "/tmp", "tmpfs", MS_NOSUID | MS_NODEV, "mode=1777");
+    /* Nothing may run from these: downloads and scratch files land here. */
+    mount_fs("run", "/run", "tmpfs", safe, "mode=0755");
+    mount_fs("tmp", "/tmp", "tmpfs", safe, "mode=1777");
 }
 
 /* Make sure fds 0, 1 and 2 point at the system console. */
@@ -210,6 +229,7 @@ static void start_terminal(struct terminal *c)
     if (pid > 0) {
         c->pid = pid;
         c->started = time(NULL);
+        activity("session", "%s started on %s (pid %d)", c->argv[0], c->tty, (int)pid);
     } else {
         c->next_start = time(NULL) + 5;
     }
@@ -222,6 +242,7 @@ static void child_exited(pid_t pid)
         if (c->pid != pid)
             continue;
         c->pid = 0;
+        activity("session", "%s on %s ended (pid %d)", c->argv[0], c->tty, (int)pid);
         time_t now = time(NULL);
         /* Back off if the program keeps dying right away. */
         if (now - c->started < 2) {
@@ -248,6 +269,7 @@ static void shutdown_system(unsigned int how)
     const char *what = how == RB_POWER_OFF ? "power off"
                      : how == RB_HALT_SYSTEM ? "halt" : "reboot";
     say("system going down (%s)", what);
+    activity("boot", "system going down (%s)", what);
 
     run_script(SHUTDOWN);
 

@@ -27,6 +27,23 @@ if [ -f "/core/drivers/$kver/modules.dep" ]; then
 fi
 mdev -s
 
+# --- Activity log ----------------------------------------------------------
+# recorder logs every program run and every network connection from here on.
+recorder &
+sleep 0.2
+recorder note boot "$PRETTY_NAME started, kernel $(uname -r)"
+
+# --- Lock down where things can change -------------------------------------
+# The OS itself and the decoys are read-only while running.
+for d in /core /bin /usr; do
+    mount --bind "$d" "$d" && mount -o remount,bind,ro "$d"
+done
+# Nothing may run from places that only hold data. (/tmp and /run are set up
+# this way by keeper. /users is left alone so your own scripts still work.)
+for d in /var /settings /root; do
+    mount --bind "$d" "$d" && mount -o remount,bind,nosuid,nodev,noexec "$d"
+done
+
 # --- Network ---------------------------------------------------------------
 ip link set lo up
 : > /run/resolv.conf

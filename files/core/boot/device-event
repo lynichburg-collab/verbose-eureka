@@ -1,0 +1,17 @@
+#!/core/cmd/sh
+# Run by mdev when a USB device or a disk appears or disappears.
+# Adds a "device" line to the activity log.
+export PATH=/core/cmd
+# Only real devices: USB devices and disks/partitions.
+case "$SUBSYSTEM:$DEVTYPE" in
+    usb:usb_device|block:*) ;;
+    *) exit 0 ;;
+esac
+dev="${MDEV:-${DEVPATH##*/}}"
+desc=""
+if [ "$ACTION" = add ] && [ -n "$DEVPATH" ]; then
+    for f in manufacturer product; do
+        [ -r "/sys$DEVPATH/$f" ] && desc="$desc $(cat "/sys$DEVPATH/$f")"
+    done
+fi
+recorder note device "${ACTION:-seen} ${SUBSYSTEM:-device} $dev${desc:+ -$desc}"

@@ -44,6 +44,7 @@ trap (see [Platitudes](#platitudes) and [Tripwires](#tripwires)).
 | `/settings` | System settings: `hostname`, `terminals`, `about`, users, shell `profile` |
 | `/users` | People's files (`/users/root` for root) |
 | `/bin`, `/usr/bin`, `/root` | Decoys and bait only. Never used by the OS. |
+| `/var/log` | `activity` (everything that happened) and `tripwire` (decoy hits) |
 | `/run`, `/tmp` | In-memory, wiped at every boot |
 | `/dev`, `/proc`, `/sys` | Kernel interfaces (names fixed by the kernel) |
 | `/etc` | Temporary compatibility link to `/settings`, because musl and some BusyBox commands look there. It will be removed. |
@@ -64,8 +65,49 @@ and BusyBox look for them by name.
    `/core/boot/shutdown`, stops every process, syncs the disks and turns the
    machine off.
 
-`/core/boot/checkup` tests that the system works (20 checks). It runs
+`/core/boot/checkup` tests that the system works (27 checks). It runs
 automatically in CI and you can run it by hand at any time.
+
+## Activity log
+
+`recorder` (started at boot) asks the kernel's audit system to report events
+and writes one line per event to `/var/log/activity`:
+
+| Kind | What's recorded |
+|---|---|
+| `run` | Every program started, with its arguments, user and parent. Failed and **blocked** attempts too. |
+| `net` | Every outgoing connection (program and destination), and any program claiming a port or waiting for incoming connections. |
+| `device` | USB devices and disks being attached or removed. |
+| `session` | Shells starting and ending on each terminal. |
+| `boot` | Startup, the recorder starting, shutdown. |
+
+```
+2026-11-18 23:09:12  net     uid=0 pid=798 (wget)  out -> 1.1.1.1:80
+2026-11-18 23:09:16  run     uid=0 pid=800 parent=786  /tmp/sneaky  BLOCKED (not allowed to run here)
+```
+
+`activity` shows the last 40 entries; `activity all`, `activity follow`, or a
+kind (`activity net`) for more. The log rotates at 4 MB.
+
+Not recorded: what was *inside* connections (too large to keep), DNS lookups
+on their own (the connection that follows them is), and shell built-ins like
+`cd` or `echo`, which don't start a program.
+
+## Lockdown
+
+- `/core` and the decoy folders (`/bin`, `/usr`) are **read-only** while the
+  system runs.
+- **Nothing can run from places that hold data**: `/tmp`, `/run`, `/var`,
+  `/settings` and `/root`. Downloading a program and running it fails, and the
+  attempt is logged as `BLOCKED`. `/users` is left alone so your own scripts
+  keep working.
+
+Limits, honestly: someone with full root access can undo mounts, kill the
+recorder or edit logs. The protections make that noisy and slower, not
+impossible. While the OS runs from memory (milestone 1) the logs reset at
+every boot. Planned, but not built because they add prompts to daily use: an
+outbound network allowlist, and approval of sensitive actions only at the
+physical keyboard.
 
 ## Platitudes
 
@@ -139,13 +181,15 @@ reassembles the root filesystem only, and `./forge clean` deletes build output.
 | `config/busybox/` | BusyBox configuration changes |
 | `src/keeper/` | keeper, our process 1 |
 | `src/decoy/` | The tripwire decoy program |
+| `src/recorder/` | recorder, which writes the activity log |
 | `files/` | Files copied as-is into the OS (settings, scripts, welcome) |
 | `.github/workflows/` | CI: build and boot test on every push |
 
 ## Roadmap
 
 1. **Terminal.** Done in an emulator: kernel, keeper, shell, core tools, wired
-   networking, driver autoloading and hotplug, platitudes, tripwires.
+   networking, driver autoloading and hotplug, platitudes, tripwires,
+   activity log, read-only system and no-run data folders.
    Still to do: build our own cross-compiler and C library instead of using
    the host's musl, patching its hardcoded `/etc` and `/bin/sh` paths, then
    remove the `/etc` link.

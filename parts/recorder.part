@@ -1,0 +1,15 @@
+# recorder: writes the activity log (/var/log/activity). Source: src/recorder/.
+NAME=recorder
+VERSION="$OS_VERSION"
+SOURCE_LOCAL=src/recorder
+INPUTS="src/recorder"
+
+build() {
+    # shellcheck disable=SC2086
+    $TARGET_CC $TARGET_CFLAGS -Wall -Wextra -Werror -o "$BUILD/recorder" "$SRC/recorder.c" $TARGET_LDFLAGS
+    strip "$BUILD/recorder"
+}
+
+install() {
+    command install -D -m 0755 "$BUILD/recorder" "$ROOTFS/core/cmd/recorder"
+}

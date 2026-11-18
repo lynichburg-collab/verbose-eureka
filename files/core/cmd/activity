@@ -1,0 +1,19 @@
+#!/core/cmd/sh
+# activity — show the activity log (programs run, network connections,
+# devices, sessions, startup and shutdown).
+#
+#   activity            the last 40 entries
+#   activity all        everything
+#   activity follow     watch new entries as they happen (Ctrl-C to stop)
+#   activity run|net|device|session|boot   only that kind of entry
+log=/var/log/activity
+[ -e "$log" ] || { echo "No activity recorded yet."; exit 0; }
+case "$1" in
+    "")       tail -n 40 "$log" ;;
+    all)      cat /var/log/activity.1 "$log" 2>/dev/null ;;
+    follow)   tail -n 20 -f "$log" ;;
+    run|net|device|session|boot)
+              grep -hE "^[0-9-]+ [0-9:]+  $1 " /var/log/activity.1 "$log" 2>/dev/null ;;
+    -h|--help) sed -n '2,9s/^# \{0,1\}//p' "$0" ;;
+    *)        echo "activity: unknown option '$1' (try: activity --help)" >&2; exit 2 ;;
+esac

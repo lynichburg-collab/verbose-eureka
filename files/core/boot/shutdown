@@ -2,4 +2,5 @@
 # shutdown — run by keeper just before it stops all processes.
 export PATH=/core/cmd
 echo "Shutting down"
+recorder note boot "shutdown script ran"
 sync
