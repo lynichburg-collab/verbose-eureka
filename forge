@@ -74,10 +74,29 @@ fetch() {
     mv "$SRC.tmp" "$SRC"
 }
 
-# A part is rebuilt when its .part file or any of its INPUTS change.
+# Apply patches/<part>/*.patch to a fetched source tree. The tree is reset
+# first, so changing or removing a patch always takes effect.
+apply_patches() {
+    [ -n "$SOURCE_LOCAL" ] && return 0
+    local dir="$ROOT/patches/$NAME" want have p
+    want="$( { cat "$dir"/*.patch 2>/dev/null || true; } | sha256sum | cut -d' ' -f1)"
+    have="$(cat "$SRC/.mtp-patches" 2>/dev/null || true)"
+    [ "$want" = "$have" ] && return 0
+    git -C "$SRC" checkout -q -- .
+    git -C "$SRC" clean -fdq
+    for p in "$dir"/*.patch; do
+        [ -e "$p" ] || continue
+        log "patch $NAME: ${p##*/}"
+        git -C "$SRC" apply "$p" || die "patch ${p##*/} does not apply to $NAME $VERSION"
+    done
+    echo "$want" > "$SRC/.mtp-patches"
+}
+
+# A part is rebuilt when its .part file, its patches or any of its INPUTS change.
 fingerprint() {
     {
         cat "$(part_file "$NAME")"
+        cat "$ROOT/patches/$NAME"/*.patch 2>/dev/null || true
         for f in $INPUTS; do
             if [ -d "$ROOT/$f" ]; then
                 find "$ROOT/$f" -type f -print0 | sort -z | xargs -0 cat
@@ -92,6 +111,7 @@ fingerprint() {
 build_part() (
     load_part "$1"
     fetch
+    apply_patches
     local fp stamp="$BUILD/.built"
     fp="$(fingerprint)"
     if [ -f "$stamp" ] && [ "$(cat "$stamp")" = "$fp" ] && [ "${FORCE:-0}" != 1 ]; then

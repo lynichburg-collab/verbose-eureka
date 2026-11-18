@@ -16,3 +16,6 @@ CONFIG_UDHCPC_DEFAULT_SCRIPT="/core/net/dhcp-lease"
 # Does not build against current kernel headers (uses removed CBQ API).
 # CONFIG_TC is not set
 # CONFIG_FEATURE_TC_INGRESS is not set
+
+# Watches the tripwire bait files (see files/core/boot/startup).
+CONFIG_INOTIFYD=y

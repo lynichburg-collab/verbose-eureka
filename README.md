@@ -3,14 +3,19 @@
 A Linux distribution built entirely from source, not based on any other
 distro. Terminal first: the only graphical program planned is the web browser.
 
+The name is "empty platitudes": like any good platitude, parts of this OS
+sound impressive and do nothing. Some of that is a joke and some of it is a
+trap (see [Platitudes](#platitudes) and [Tripwires](#tripwires)).
+
 > **Status:** milestone 1. It boots to a shell in an emulator. It does not
 > install to a real disk yet. See [Roadmap](#roadmap).
 
 ## Design
 
 - **Own layout.** The OS lives in `/core`, settings in `/settings`, people's
-  files in `/users`. There is no `/bin`, `/usr`, `/lib` or `/home`, so software
-  written for an ordinary Linux system does not find what it expects.
+  files in `/users`. There is no `/lib`, `/home` or `/bin/sh`, so software
+  written for an ordinary Linux system does not find what it expects. `/bin`
+  and `/usr` exist only to hold decoys.
 - **Own process 1.** `keeper` ([`src/keeper/keeper.c`](src/keeper/keeper.c),
   about 330 lines of C) is the first program the kernel runs. It starts the
   system, keeps the terminals running and shuts everything down. Boot policy
@@ -35,8 +40,10 @@ distro. Terminal first: the only graphical program planned is the web browser.
 | `/core/drivers` | Kernel drivers (modules) |
 | `/core/firmware` | Device firmware (Wi-Fi, GPU) |
 | `/core/share` | Shared data (the `welcome` message) |
+| `/core/tripwire` | The decoy program, the bait list, the bait-file handler |
 | `/settings` | System settings: `hostname`, `terminals`, `about`, users, shell `profile` |
 | `/users` | People's files (`/users/root` for root) |
+| `/bin`, `/usr/bin`, `/root` | Decoys and bait only. Never used by the OS. |
 | `/run`, `/tmp` | In-memory, wiped at every boot |
 | `/dev`, `/proc`, `/sys` | Kernel interfaces (names fixed by the kernel) |
 | `/etc` | Temporary compatibility link to `/settings`, because musl and some BusyBox commands look there. It will be removed. |
@@ -57,8 +64,40 @@ and BusyBox look for them by name.
    `/core/boot/shutdown`, stops every process, syncs the disks and turns the
    machine off.
 
-`/core/boot/checkup` tests that the system works. It runs automatically in CI
-and you can run it by hand at any time.
+`/core/boot/checkup` tests that the system works (20 checks). It runs
+automatically in CI and you can run it by hand at any time.
+
+## Platitudes
+
+Commands that sound important, show a progress bar, report success and do
+nothing at all: `optimize`, `boost`, `align`, `harmonize`, `defragment`,
+`calibrate`, `reticulate`, `enlighten`. `wisdom` prints an empty platitude.
+They are one script, `/core/cmd/platitude`, under several names.
+
+## Tripwires
+
+Attack scripts written for normal Linux reach for `bash`, `curl`, `python3`,
+`sudo`, a stolen SSH key and so on. MTplatitudes keeps none of these, so it puts
+decoys where they would be. Nothing legitimate ever touches them, so any use
+at all is worth knowing about.
+
+- **Decoy programs** at `/bin/bash`, `/usr/bin/{env,python3,perl,curl,wget,sudo}`.
+  One small static program ([`src/decoy/decoy.c`](src/decoy/decoy.c)) acts
+  like each of them: answers `--version`, accepts scripts and downloads, offers
+  a fake shell, and has a `sudo` that rejects every password. It does nothing
+  and logs what ran, its arguments and what started it. Passwords typed into
+  the fake `sudo` are never logged.
+- **Bait files**: `/root/.ssh/id_rsa`, `/settings/master.key` and
+  `/settings/recovery-codes` look real but are random bytes generated at build
+  time. `inotifyd` watches them and logs any open, change, move or delete.
+- `/bin` and `/usr/bin` come *last* on the command path, after `/core/cmd`, so
+  real commands always win and only names the OS doesn't have reach a decoy.
+- The log is `/var/log/tripwire`. Log in after a decoy was touched and you get a
+  warning; `tripwires` shows the log and `tripwires --clear` empties it.
+
+Tripwires notice things; they don't stop a targeted attacker. Keeping the
+kernel and browser up to date matters more. Expect a harmless hit if you type
+`sudo` out of habit or search the whole disk with `grep -r`.
 
 ## Building
 
@@ -94,19 +133,22 @@ reassembles the root filesystem only, and `./forge clean` deletes build output.
 |---|---|
 | `about.conf` | OS name, version, architecture, list of parts |
 | `forge` | The build tool |
+| `patches/<part>/` | Changes we make to upstream source code, applied after download |
 | `parts/` | One file per part of the OS: where to get it and how to build it ([details](parts/README.md)) |
 | `config/linux/` | Kernel configuration on top of the upstream defaults |
 | `config/busybox/` | BusyBox configuration changes |
 | `src/keeper/` | keeper, our process 1 |
+| `src/decoy/` | The tripwire decoy program |
 | `files/` | Files copied as-is into the OS (settings, scripts, welcome) |
 | `.github/workflows/` | CI: build and boot test on every push |
 
 ## Roadmap
 
 1. **Terminal.** Done in an emulator: kernel, keeper, shell, core tools, wired
-   networking, driver autoloading and hotplug.
-   Still to do: build our own cross-compiler instead of using the host's musl
-   wrapper, and remove the `/etc` link.
+   networking, driver autoloading and hotplug, platitudes, tripwires.
+   Still to do: build our own cross-compiler and C library instead of using
+   the host's musl, patching its hardcoded `/etc` and `/bin/sh` paths, then
+   remove the `/etc` link.
 2. **Installs on real hardware.** A bootable USB installer that installs
    alongside an existing OS, only using free space. Boots via UEFI. Includes
    firmware for common Wi-Fi cards and GPUs, Wi-Fi setup (iwd), and user

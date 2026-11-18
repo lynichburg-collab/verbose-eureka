@@ -1,0 +1,8 @@
+#!/core/cmd/sh
+# Called by inotifyd when a bait file is opened, changed, moved or deleted.
+#   $1 = what happened (r opened, c changed, D deleted, M moved)   $2 = file
+case "$1" in
+    *r*) what="opened" ;; *c*) what="changed" ;; *D*) what="deleted" ;;
+    *M*) what="moved" ;; *) what="touched ($1)" ;;
+esac
+printf '%s  %s  bait file %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$2" "$what" >> /var/log/tripwire

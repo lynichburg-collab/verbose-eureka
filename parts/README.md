@@ -15,6 +15,13 @@ small shell file that `forge` loads. Parts are listed, in build order, in
 | `SOURCE_LOCAL` | Instead of fetching: a directory in this repo (used for code we write ourselves, like `src/keeper`). |
 | `INPUTS` | Extra files or directories in this repo. If any of them change, the part is rebuilt. |
 
+## Patches
+
+If `patches/<name>/` exists, every `*.patch` in it is applied to the
+downloaded source (in name order) before building. Changing a patch resets
+the source tree and triggers a rebuild. Example:
+`patches/busybox/0001-mdev-run-commands-without-bin-sh.patch`.
+
 ## Functions
 
 `build()` compiles the part into `$BUILD`. It only runs when the `.part` file

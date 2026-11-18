@@ -55,7 +55,7 @@ static int n_terminals;
 static sigset_t handled;
 
 static char *const child_env[] = {
-    "PATH=/core/cmd",
+    "PATH=/core/cmd:/bin:/usr/bin",       /* decoys last: see src/decoy */
     "HOME=/users/root",
     "TERM=linux",
     "SHELL=" SHELL,

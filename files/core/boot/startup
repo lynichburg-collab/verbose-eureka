@@ -38,6 +38,14 @@ for dev in /sys/class/net/*; do
     udhcpc -b -q -i "$name" >/dev/null 2>&1 &
 done
 
+# --- Tripwires --------------------------------------------------------------
+# Watch the bait files. Anything opening them is logged to /var/log/tripwire.
+if [ -s /core/tripwire/bait ]; then
+    set --
+    while read -r f; do [ -e "$f" ] && set -- "$@" "$f:rcDM"; done < /core/tripwire/bait
+    [ $# -gt 0 ] && inotifyd /core/tripwire/touched "$@" &
+fi
+
 # --- Self-test (kernel command line: mtp.test=1) ----------------------------
 case " $(cat /proc/cmdline) " in
     *" mtp.test=1 "*)

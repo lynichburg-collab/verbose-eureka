@@ -1,0 +1,46 @@
+# Tripwires: decoy programs and bait files at the places attack scripts look,
+# which MTplatitudes itself never uses. See src/decoy/decoy.c and README.
+NAME=tripwire
+VERSION="$OS_VERSION"
+SOURCE_LOCAL=src/decoy
+INPUTS="src/decoy"
+
+# Where the decoy program is placed, under familiar names.
+DECOY_PATHS="/bin/bash /usr/bin/env /usr/bin/python3 /usr/bin/perl
+             /usr/bin/curl /usr/bin/wget /usr/bin/sudo"
+
+build() {
+    # shellcheck disable=SC2086
+    $TARGET_CC $TARGET_CFLAGS -Wall -Wextra -Werror -o "$BUILD/decoy" "$SRC/decoy.c" $TARGET_LDFLAGS
+    strip "$BUILD/decoy"
+}
+
+install() {
+    local p
+    command install -D -m 0755 "$BUILD/decoy" "$ROOTFS/core/tripwire/decoy"
+    for p in $DECOY_PATHS; do
+        command install -D -m 0755 "$BUILD/decoy" "$ROOTFS$p"
+    done
+
+    # Bait files. Generated fresh at every build from random bytes, so they
+    # look real but contain nothing (and nothing secret is stored in git).
+    mkdir -p "$ROOTFS/root/.ssh"
+    chmod 0700 "$ROOTFS/root" "$ROOTFS/root/.ssh"
+    {
+        echo "-----BEGIN OPENSSH PRIVATE KEY-----"
+        head -c 1600 /dev/urandom | base64 -w 70
+        echo "-----END OPENSSH PRIVATE KEY-----"
+    } > "$ROOTFS/root/.ssh/id_rsa"
+    head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n' > "$ROOTFS/settings/master.key"
+    echo >> "$ROOTFS/settings/master.key"
+    for _ in 1 2 3 4 5 6 7 8 9 10; do
+        head -c 4 /dev/urandom | od -An -tx1 | tr -d ' \n' | sed 's/^\(....\)/\1-/'
+        echo
+    done > "$ROOTFS/settings/recovery-codes"
+    chmod 0600 "$ROOTFS/root/.ssh/id_rsa" "$ROOTFS/settings/master.key" \
+               "$ROOTFS/settings/recovery-codes"
+
+    # The list of bait files, read by startup to watch them.
+    printf '%s\n' /root/.ssh/id_rsa /settings/master.key /settings/recovery-codes \
+        > "$ROOTFS/core/tripwire/bait"
+}

@@ -1,0 +1,83 @@
+#!/core/cmd/sh
+# The MTplatitudes commands. Each one sounds like it does something important,
+# shows some progress, and reports success. None of them do anything.
+# That's the point: empty platitudes. (README: "Platitudes".)
+#
+# One script, many names: what it says depends on the name it was run as.
+
+name="${0##*/}"
+
+progress() {
+    printf '%s ' "$1"
+    i=0
+    while [ "$i" -lt 24 ]; do
+        printf '.'
+        sleep 0.08
+        i=$((i + 1))
+    done
+    printf ' done\n'
+}
+
+case "$1" in
+    -h|--help)
+        echo "Usage: $name"
+        echo "Takes no options. Needs none. Has everything it needs already."
+        exit 0
+        ;;
+esac
+
+case "$name" in
+    optimize)
+        progress "Optimizing system"
+        echo "Everything is now exactly as optimized as it was meant to be."
+        ;;
+    boost)
+        progress "Boosting performance"
+        echo "Performance boosted by 0%. You may notice a difference anyway."
+        ;;
+    align)
+        progress "Aligning subsystems"
+        echo "All subsystems are aligned with their purpose."
+        ;;
+    harmonize)
+        progress "Harmonizing processes"
+        echo "Your processes are at peace with one another."
+        ;;
+    defragment)
+        progress "Defragmenting"
+        echo "Fragments are just wholes that haven't met yet."
+        ;;
+    calibrate)
+        progress "Calibrating"
+        echo "Calibration complete. Your expectations have been adjusted."
+        ;;
+    reticulate)
+        progress "Reticulating splines"
+        echo "Splines reticulated."
+        ;;
+    enlighten)
+        progress "Seeking enlightenment"
+        echo "The system you are looking for is the system you already have."
+        ;;
+    wisdom)
+        set -- \
+            "Every reboot is a fresh start." \
+            "The fastest code is the code that never runs." \
+            "A process that never starts can never crash." \
+            "You can't lose data you never saved." \
+            "Everything happens for a reason code." \
+            "Not all who idle are lost." \
+            "It works on your machine, and your machine is enough." \
+            "Good things come to those who wait(2)." \
+            "The real uptime was the friends we made along the way." \
+            "Today is a good day to sync." \
+            "Be the process you want to see in the table." \
+            "Every process returns eventually. Some just need more time."
+        n=$(( (RANDOM % $#) + 1 ))
+        eval "echo \"\${$n}\""
+        ;;
+    *)
+        echo "Done."
+        ;;
+esac
+exit 0

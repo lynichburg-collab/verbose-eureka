@@ -1,0 +1,20 @@
+diff --git a/util-linux/mdev.c b/util-linux/mdev.c
+index ebdc0c2..ece9e1c 100644
+--- a/util-linux/mdev.c
++++ b/util-linux/mdev.c
+@@ -804,8 +804,13 @@ static void make_device(char *device_name, char *path, int operation)
+ 			char *s = xasprintf("%s=%s", "MDEV", node_name);
+ 			putenv(s);
+ 			dbg1("running: %s", command);
+-			if (system(command) == -1)
+-				bb_perror_msg("can't run '%s'", command);
++			{
++				/* MTplatitudes: no /bin/sh, so don't use system().
++				 * Run the command with our shell directly. */
++				char *sh_argv[] = { (char *)"/core/cmd/sh", (char *)"-c", command, NULL };
++				if (spawn_and_wait(sh_argv) < 0)
++					bb_perror_msg("can't run '%s'", command);
++			}
+ 			bb_unsetenv_and_free(s);
+ 		}
+ 
