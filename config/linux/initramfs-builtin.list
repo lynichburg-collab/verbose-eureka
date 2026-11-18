@@ -1,0 +1,5 @@
+# Built into the kernel image. Replaces the kernel's default list, which also
+# creates /root (not part of our layout). Our real root filesystem is the
+# separate initramfs that build.sh creates.
+dir /dev 0755 0 0
+nod /dev/console 0600 0 0 c 5 1

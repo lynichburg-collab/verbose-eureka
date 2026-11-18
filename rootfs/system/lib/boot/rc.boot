@@ -16,7 +16,8 @@ if [ -w /sys/module/firmware_class/parameters/path ]; then
 fi
 
 # Hotplug: devices that appear later (USB sticks...) get their driver too.
-echo /system/bin/mdev > /proc/sys/kernel/hotplug
+# The kernel is built with this already; set it again in case of a custom kernel.
+[ -w /proc/sys/kernel/hotplug ] && echo /system/bin/mdev > /proc/sys/kernel/hotplug
 
 # Coldplug: load drivers for every device already present.
 kver="$(uname -r)"

@@ -9,8 +9,11 @@ build() {
     local kmake=(make -C "$SRC" O="$BUILD" ARCH=x86_64 -j"$JOBS")
     # Start from the upstream x86_64 defaults, then apply our changes on top.
     "${kmake[@]}" x86_64_defconfig
+    # The built-in initramfs list needs an absolute path, so it is added here.
+    printf 'CONFIG_INITRAMFS_SOURCE="%s"\n' "$ROOT/config/linux/initramfs-builtin.list" \
+        > "$BUILD/paths.fragment"
     "$SRC/scripts/kconfig/merge_config.sh" -m -O "$BUILD" \
-        "$BUILD/.config" "$ROOT/config/linux/generic.fragment"
+        "$BUILD/.config" "$ROOT/config/linux/generic.fragment" "$BUILD/paths.fragment"
     "${kmake[@]}" olddefconfig
 
     # Fail loudly if a setting we rely on was dropped by Kconfig.

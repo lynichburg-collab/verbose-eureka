@@ -18,6 +18,9 @@ CONFIG_EFI=y
 CONFIG_EFI_STUB=y
 CONFIG_EFI_PARTITION=y
 CONFIG_FW_LOADER=y
+# Hotplug: the kernel runs mdev for each device event (driver autoload).
+CONFIG_UEVENT_HELPER=y
+CONFIG_UEVENT_HELPER_PATH="/system/bin/mdev"
 
 # --- Hardening (beyond defconfig) ---
 CONFIG_RANDOMIZE_BASE=y
