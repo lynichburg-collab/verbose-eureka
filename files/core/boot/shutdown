@@ -1,0 +1,5 @@
+#!/core/cmd/sh
+# shutdown — run by keeper just before it stops all processes.
+export PATH=/core/cmd
+echo "Shutting down"
+sync

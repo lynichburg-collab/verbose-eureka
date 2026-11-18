@@ -1,5 +1,0 @@
-#!/system/bin/sh
-# rc.shutdown — run by init just before it stops all processes.
-export PATH=/system/bin
-echo "Shutting down"
-sync

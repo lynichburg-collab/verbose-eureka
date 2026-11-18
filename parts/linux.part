@@ -39,9 +39,9 @@ build() {
 install() {
     local rel
     rel="$(cat "$BUILD/kernel.release")"
-    mkdir -p "$OUT" "$ROOTFS/system/modules"
+    mkdir -p "$OUT" "$ROOTFS/core/drivers"
     cp "$BUILD/arch/x86/boot/bzImage" "$OUT/kernel"
-    cp -a "$BUILD/stage/lib/modules/$rel" "$ROOTFS/system/modules/"
+    cp -a "$BUILD/stage/lib/modules/$rel" "$ROOTFS/core/drivers/"
     # These point back into the build tree and are useless on the target.
-    rm -f "$ROOTFS/system/modules/$rel/build" "$ROOTFS/system/modules/$rel/source"
+    rm -f "$ROOTFS/core/drivers/$rel/build" "$ROOTFS/core/drivers/$rel/source"
 }

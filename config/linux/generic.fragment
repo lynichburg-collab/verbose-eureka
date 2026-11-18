@@ -3,9 +3,9 @@
 # hardware drivers are modules, loaded at boot only when the device exists.
 
 # --- Identity and boot ---
-CONFIG_LOCALVERSION="-ve"
-CONFIG_DEFAULT_HOSTNAME="verbose-eureka"
-CONFIG_DEFAULT_INIT="/system/bin/init"
+CONFIG_LOCALVERSION="-mtp"
+CONFIG_DEFAULT_HOSTNAME="mtplatitudes"
+CONFIG_DEFAULT_INIT="/core/cmd/keeper"
 CONFIG_IKCONFIG=y
 CONFIG_IKCONFIG_PROC=y
 CONFIG_MODULES=y
@@ -20,7 +20,7 @@ CONFIG_EFI_PARTITION=y
 CONFIG_FW_LOADER=y
 # Hotplug: the kernel runs mdev for each device event (driver autoload).
 CONFIG_UEVENT_HELPER=y
-CONFIG_UEVENT_HELPER_PATH="/system/bin/mdev"
+CONFIG_UEVENT_HELPER_PATH="/core/cmd/mdev"
 
 # --- Hardening (beyond defconfig) ---
 CONFIG_RANDOMIZE_BASE=y

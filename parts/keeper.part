@@ -1,0 +1,16 @@
+# keeper: our own init (process 1). Source lives in this repo: src/keeper/.
+NAME=keeper
+VERSION="$OS_VERSION"
+SOURCE_LOCAL=src/keeper
+INPUTS="src/keeper"
+
+build() {
+    # shellcheck disable=SC2086
+    $TARGET_CC $TARGET_CFLAGS -Wall -Wextra -Werror -o "$BUILD/keeper" "$SRC/keeper.c" $TARGET_LDFLAGS
+    strip "$BUILD/keeper"
+}
+
+install() {
+    # 'command' because this function is itself named install.
+    command install -D -m 0755 "$BUILD/keeper" "$ROOTFS/core/cmd/keeper"
+}

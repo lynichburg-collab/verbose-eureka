@@ -30,14 +30,14 @@ build() {
 }
 
 install() {
-    mkdir -p "$ROOTFS/system/bin"
-    cp "$BUILD/busybox" "$ROOTFS/system/bin/busybox"
-    chmod 0755 "$ROOTFS/system/bin/busybox"
-    # One link per command, all in /system/bin. The binary is static, so we
+    mkdir -p "$ROOTFS/core/cmd"
+    cp "$BUILD/busybox" "$ROOTFS/core/cmd/busybox"
+    chmod 0755 "$ROOTFS/core/cmd/busybox"
+    # One link per command, all in /core/cmd. The binary is static, so we
     # can ask it for its own command list on the build machine.
     local cmd
     for cmd in $("$BUILD/busybox" --list); do
         case "$cmd" in busybox) continue ;; esac
-        [ -e "$ROOTFS/system/bin/$cmd" ] || ln -s busybox "$ROOTFS/system/bin/$cmd"
+        [ -e "$ROOTFS/core/cmd/$cmd" ] || ln -s busybox "$ROOTFS/core/cmd/$cmd"
     done
 }

@@ -1,5 +1,5 @@
 # Changes applied on top of BusyBox's defconfig. One setting per line, in
-# .config syntax. The recipe applies them and runs oldconfig.
+# .config syntax. The part applies them and runs oldconfig.
 
 # Single static binary, no shared libraries needed at runtime.
 CONFIG_STATIC=y
@@ -10,8 +10,8 @@ CONFIG_STATIC=y
 # CONFIG_FEATURE_CALL_TELINIT is not set
 
 # Our filesystem layout.
-CONFIG_DEFAULT_MODULES_DIR="/system/modules"
-CONFIG_UDHCPC_DEFAULT_SCRIPT="/system/lib/net/udhcpc.script"
+CONFIG_DEFAULT_MODULES_DIR="/core/drivers"
+CONFIG_UDHCPC_DEFAULT_SCRIPT="/core/net/dhcp-lease"
 
 # Does not build against current kernel headers (uses removed CBQ API).
 # CONFIG_TC is not set

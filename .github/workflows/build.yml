@@ -27,16 +27,16 @@ jobs:
           fi
 
       - name: Build
-        run: ./build.sh
+        run: ./forge
 
       - name: Boot test in QEMU
-        run: ./build.sh test
+        run: ./forge test
 
       - name: Upload kernel and root filesystem
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: verbose-eureka-${{ github.sha }}
+          name: mtplatitudes-${{ github.sha }}
           path: |
             out/kernel
             out/rootfs.cpio.gz

@@ -1,27 +1,27 @@
-#!/system/bin/sh
-# rc.boot — run once by init, after the kernel filesystems are mounted and
-# before any console starts. Boot policy lives here so it can change without
-# recompiling init.
-export PATH=/system/bin
+#!/core/cmd/sh
+# startup — run once by keeper (process 1), after the kernel filesystems are
+# mounted and before any terminal starts. Boot policy lives here so it can
+# change without recompiling keeper.
+export PATH=/core/cmd
 
-. /config/os-release
+. /settings/about
 echo "Starting $PRETTY_NAME"
 
-hostname -F /config/hostname
+hostname -F /settings/hostname
 
 # --- Hardware --------------------------------------------------------------
-# Firmware for Wi-Fi cards and GPUs lives in /system/firmware.
+# Firmware for Wi-Fi cards and GPUs lives in /core/firmware.
 if [ -w /sys/module/firmware_class/parameters/path ]; then
-    echo /system/firmware > /sys/module/firmware_class/parameters/path
+    echo /core/firmware > /sys/module/firmware_class/parameters/path
 fi
 
 # Hotplug: devices that appear later (USB sticks...) get their driver too.
 # The kernel is built with this already; set it again in case of a custom kernel.
-[ -w /proc/sys/kernel/hotplug ] && echo /system/bin/mdev > /proc/sys/kernel/hotplug
+[ -w /proc/sys/kernel/hotplug ] && echo /core/cmd/mdev > /proc/sys/kernel/hotplug
 
 # Coldplug: load drivers for every device already present.
 kver="$(uname -r)"
-if [ -f "/system/modules/$kver/modules.dep" ]; then
+if [ -f "/core/drivers/$kver/modules.dep" ]; then
     find /sys/devices -name modalias -type f -exec cat {} + 2>/dev/null \
         | sort -u | xargs -r modprobe -qa 2>/dev/null
 fi
@@ -38,10 +38,10 @@ for dev in /sys/class/net/*; do
     udhcpc -b -q -i "$name" >/dev/null 2>&1 &
 done
 
-# --- Self-test (kernel command line: ve.test=1) ----------------------------
+# --- Self-test (kernel command line: mtp.test=1) ----------------------------
 case " $(cat /proc/cmdline) " in
-    *" ve.test=1 "*)
-        /system/lib/boot/selftest
+    *" mtp.test=1 "*)
+        /core/boot/checkup
         poweroff
         ;;
 esac

@@ -1,6 +1,6 @@
 # Settings the build verifies after olddefconfig. If Kconfig silently drops
 # one of these (renamed symbol, missing dependency), the build stops.
-CONFIG_DEFAULT_INIT="/system/bin/init"
+CONFIG_DEFAULT_INIT="/core/cmd/keeper"
 CONFIG_MODULES=y
 CONFIG_BLK_DEV_INITRD=y
 CONFIG_DEVTMPFS=y
@@ -21,4 +21,4 @@ CONFIG_DM_CRYPT=m
 CONFIG_VIRTIO_NET=y
 CONFIG_SERIAL_8250_CONSOLE=y
 CONFIG_UEVENT_HELPER=y
-CONFIG_UEVENT_HELPER_PATH="/system/bin/mdev"
+CONFIG_UEVENT_HELPER_PATH="/core/cmd/mdev"

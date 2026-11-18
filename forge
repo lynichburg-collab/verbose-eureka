@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
-# build.sh — builds the whole OS from source.
+# forge — builds the whole OS from source.
 #
-#   ./build.sh            build everything and produce out/kernel + out/rootfs.cpio.gz
-#   ./build.sh <package>  (re)build one package, e.g. ./build.sh busybox
-#   ./build.sh image      reassemble the root filesystem and initramfs only
-#   ./build.sh test       boot the result in QEMU and run the self-test
-#   ./build.sh run        boot the result in QEMU interactively (Ctrl-A X quits)
-#   ./build.sh clean      delete build output, keep downloaded sources
-#   ./build.sh distclean  delete everything, including downloaded sources
+#   ./forge            build everything and produce out/kernel + out/rootfs.cpio.gz
+#   ./forge <part>     (re)build one part, e.g. ./forge busybox
+#   ./forge image      reassemble the root filesystem and initramfs only
+#   ./forge test       boot the result in QEMU and run the checkup
+#   ./forge run        boot the result in QEMU interactively (Ctrl-A X quits)
+#   ./forge clean      delete build output, keep downloaded sources
+#   ./forge distclean  delete everything, including downloaded sources
 #
-# Each package is described by recipes/<name>.recipe (see recipes/README.md).
+# Each part of the OS is described by parts/<name>.part (see parts/README.md).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-# shellcheck source=os.conf
-. "$ROOT/os.conf"
+# shellcheck source=about.conf
+. "$ROOT/about.conf"
 
 WORK="${WORK:-$ROOT/work}"
 SOURCES="$WORK/sources"
@@ -26,7 +26,7 @@ JOBS="${JOBS:-$(nproc)}"
 export ROOT WORK SOURCES BUILDS ROOTFS SYSROOT OUT JOBS ARCH OS_ID OS_NAME OS_VERSION
 
 # Userland is linked statically against musl. Kernel headers come from our own
-# kernel source (installed into $SYSROOT by the linux recipe), not the host.
+# kernel source (installed into $SYSROOT by the linux part), not the host.
 export TARGET_CC="musl-gcc"
 export TARGET_CFLAGS="-Os -pipe -static -isystem $SYSROOT/include"
 export TARGET_LDFLAGS="-static"
@@ -42,15 +42,15 @@ need_tools() {
     [ ${#missing[@]} -eq 0 ] || die "missing host tools: ${missing[*]} (see README: Building)"
 }
 
-# --- recipes ----------------------------------------------------------------
+# --- parts ------------------------------------------------------------------
 
-recipe_file() { echo "$ROOT/recipes/$1.recipe"; }
+part_file() { echo "$ROOT/parts/$1.part"; }
 
-# Load a recipe into a clean set of variables. Call inside a subshell.
-load_recipe() {
+# Load a part into a clean set of variables. Call inside a subshell.
+load_part() {
     local name="$1" file
-    file="$(recipe_file "$name")"
-    [ -f "$file" ] || die "no recipe for '$name' ($file)"
+    file="$(part_file "$name")"
+    [ -f "$file" ] || die "no part named '$name' ($file)"
     NAME="" VERSION="" SOURCE_GIT="" SOURCE_REF="" SOURCE_LOCAL="" INPUTS=""
     unset -f build install 2>/dev/null || true
     # shellcheck source=/dev/null
@@ -74,10 +74,10 @@ fetch() {
     mv "$SRC.tmp" "$SRC"
 }
 
-# A package is rebuilt when its recipe or any of its INPUTS files change.
+# A part is rebuilt when its .part file or any of its INPUTS change.
 fingerprint() {
     {
-        cat "$(recipe_file "$NAME")"
+        cat "$(part_file "$NAME")"
         for f in $INPUTS; do
             if [ -d "$ROOT/$f" ]; then
                 find "$ROOT/$f" -type f -print0 | sort -z | xargs -0 cat
@@ -89,8 +89,8 @@ fingerprint() {
     } | sha256sum | cut -d' ' -f1
 }
 
-build_pkg() (
-    load_recipe "$1"
+build_part() (
+    load_part "$1"
     fetch
     local fp stamp="$BUILD/.built"
     fp="$(fingerprint)"
@@ -105,8 +105,8 @@ build_pkg() (
     echo "$fp" > "$stamp"
 )
 
-install_pkg() (
-    load_recipe "$1"
+install_part() (
+    load_part "$1"
     [ -f "$BUILD/.built" ] || die "$NAME has not been built"
     install
 )
@@ -117,28 +117,28 @@ assemble_rootfs() {
     log "assemble root filesystem"
     rm -rf "$ROOTFS"
     mkdir -p "$ROOTFS"
-    # Static files that ship with the OS (config, boot scripts, motd...).
-    cp -a "$ROOT/rootfs/." "$ROOTFS/"
+    # Files that ship with the OS as-is (settings, boot scripts, welcome...).
+    cp -a "$ROOT/files/." "$ROOTFS/"
     # Our filesystem layout. See README: Filesystem layout.
-    mkdir -p "$ROOTFS"/{system/bin,system/lib,system/share,system/modules,system/firmware} \
-             "$ROOTFS"/{config,home/root,var/log,dev,proc,sys,run,tmp}
+    mkdir -p "$ROOTFS"/core/{cmd,boot,net,drivers,firmware,share} \
+             "$ROOTFS"/{settings,users/root,var/log,dev,proc,sys,run,tmp}
     chmod 1777 "$ROOTFS/tmp"
-    chmod 0700 "$ROOTFS/home/root"
-    # Compatibility link: musl and a few BusyBox applets look in /etc. This
+    chmod 0700 "$ROOTFS/users/root"
+    # Compatibility link: musl and a few BusyBox commands look in /etc. This
     # goes away once we patch those paths at build time.
-    ln -sfn config "$ROOTFS/etc"
-    # /config/resolv.conf lives in /run so /config can later be read-only.
-    ln -sfn /run/resolv.conf "$ROOTFS/config/resolv.conf"
+    ln -sfn settings "$ROOTFS/etc"
+    # resolv.conf lives in /run so /settings can later be read-only.
+    ln -sfn /run/resolv.conf "$ROOTFS/settings/resolv.conf"
 
-    cat > "$ROOTFS/config/os-release" <<EOF
+    cat > "$ROOTFS/settings/about" <<EOF
 ID=$OS_ID
 NAME="$OS_NAME"
 VERSION="$OS_VERSION"
 PRETTY_NAME="$OS_NAME $OS_VERSION"
 EOF
-    echo "$OS_ID" > "$ROOTFS/config/hostname"
+    echo "$OS_ID" > "$ROOTFS/settings/hostname"
 
-    for p in $PACKAGES; do install_pkg "$p"; done
+    for p in $PARTS; do install_part "$p"; done
 }
 
 # Build the initramfs with the kernel's own gen_init_cpio, so device nodes and
@@ -181,17 +181,17 @@ qemu_cmd() {
 cmd_run() {
     log "booting in QEMU — Ctrl-A then X to quit"
     # shellcheck disable=SC2046
-    exec $(qemu_cmd) -append "console=ttyS0 rdinit=/system/bin/init"
+    exec $(qemu_cmd) -append "console=ttyS0 rdinit=/core/cmd/keeper"
 }
 
 cmd_test() {
     local log_file="$OUT/boot-test.log"
     log "boot test (log: $log_file)"
     # shellcheck disable=SC2046
-    timeout 600 $(qemu_cmd) -append "console=ttyS0 rdinit=/system/bin/init ve.test=1 panic=-1" \
+    timeout 600 $(qemu_cmd) -append "console=ttyS0 rdinit=/core/cmd/keeper mtp.test=1 panic=-1" \
         < /dev/null > "$log_file" 2>&1 || true
-    if grep -q "SELFTEST PASS" "$log_file" && grep -q "reboot: Power down" "$log_file"; then
-        grep -E "SELFTEST|^  (ok|FAIL)" "$log_file" || true
+    if grep -q "CHECKUP PASS" "$log_file" && grep -q "reboot: Power down" "$log_file"; then
+        grep -E "CHECKUP|^  (ok|FAIL)" "$log_file" || true
         log "boot test passed"
     else
         tail -n 60 "$log_file"
@@ -206,7 +206,7 @@ main() {
     case "$cmd" in
         all)
             need_tools
-            for p in $PACKAGES; do build_pkg "$p"; done
+            for p in $PARTS; do build_part "$p"; done
             assemble_rootfs
             make_image
             ;;
@@ -216,9 +216,9 @@ main() {
         clean)     rm -rf "$BUILDS" "$ROOTFS" "$SYSROOT" "$OUT" "$WORK/initramfs.list" ;;
         distclean) rm -rf "$WORK" "$OUT" ;;
         *)
-            [ -f "$(recipe_file "$cmd")" ] || die "unknown command or package: $cmd"
+            [ -f "$(part_file "$cmd")" ] || die "unknown command or part: $cmd"
             need_tools
-            FORCE=1 build_pkg "$cmd"
+            FORCE=1 build_part "$cmd"
             ;;
     esac
 }

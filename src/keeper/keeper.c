@@ -1,11 +1,12 @@
 /*
- * init — process 1 for Verbose Eureka.
+ * keeper — process 1 for MTplatitudes.
  *
- * The kernel starts this program first. It:
+ * The kernel starts this program first, and it runs until the machine turns
+ * off. It:
  *   1. mounts the kernel filesystems (/proc, /sys, /dev, /run, /tmp),
- *   2. runs the boot script /system/lib/boot/rc.boot (policy lives there,
+ *   2. runs the boot script /core/boot/startup (policy lives there,
  *      so changing what happens at boot does not need a recompile),
- *   3. starts a program on each console listed in /config/consoles and
+ *   3. starts a program on each terminal listed in /settings/terminals and
  *      restarts it when it exits,
  *   4. reaps orphaned processes,
  *   5. shuts the machine down when asked:
@@ -32,14 +33,14 @@
 #include <time.h>
 #include <unistd.h>
 
-#define SHELL        "/system/bin/sh"
-#define RC_BOOT      "/system/lib/boot/rc.boot"
-#define RC_SHUTDOWN  "/system/lib/boot/rc.shutdown"
-#define CONSOLES     "/config/consoles"
-#define MAX_CONSOLES 8
+#define SHELL        "/core/cmd/sh"
+#define STARTUP      "/core/boot/startup"
+#define SHUTDOWN     "/core/boot/shutdown"
+#define TERMINALS     "/settings/terminals"
+#define MAX_TERMINALS 8
 #define MAX_ARGS     16
 
-struct console {
+struct terminal {
     char tty[32];
     char line[256];
     char *argv[MAX_ARGS];
@@ -49,13 +50,13 @@ struct console {
     int quick_exits;
 };
 
-static struct console consoles[MAX_CONSOLES];
-static int n_consoles;
+static struct terminal terminals[MAX_TERMINALS];
+static int n_terminals;
 static sigset_t handled;
 
 static char *const child_env[] = {
-    "PATH=/system/bin",
-    "HOME=/home/root",
+    "PATH=/core/cmd",
+    "HOME=/users/root",
     "TERM=linux",
     "SHELL=" SHELL,
     NULL,
@@ -65,7 +66,7 @@ static void say(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    fputs("init: ", stderr);
+    fputs("keeper: ", stderr);
     vfprintf(stderr, fmt, ap);
     fputc('\n', stderr);
     va_end(ap);
@@ -139,24 +140,24 @@ static void run_script(const char *path)
     }
 }
 
-static void load_consoles(void)
+static void load_terminals(void)
 {
-    FILE *f = fopen(CONSOLES, "r");
+    FILE *f = fopen(TERMINALS, "r");
     char buf[256];
 
-    n_consoles = 0;
+    n_terminals = 0;
     if (!f) {
-        /* No config: a shell on the kernel console, so the system is usable. */
-        struct console *c = &consoles[n_consoles++];
+        /* No settings file: a shell on the kernel console, so the system is usable. */
+        struct terminal *c = &terminals[n_terminals++];
         snprintf(c->tty, sizeof c->tty, "console");
         snprintf(c->line, sizeof c->line, SHELL " -l");
     } else {
-        while (n_consoles < MAX_CONSOLES && fgets(buf, sizeof buf, f)) {
+        while (n_terminals < MAX_TERMINALS && fgets(buf, sizeof buf, f)) {
             char *p = buf + strspn(buf, " \t");
             p[strcspn(p, "\r\n")] = '\0';
             if (*p == '\0' || *p == '#')
                 continue;
-            struct console *c = &consoles[n_consoles];
+            struct terminal *c = &terminals[n_terminals];
             char *rest = p + strcspn(p, " \t");
             if (*rest == '\0')
                 continue;                       /* tty with no command */
@@ -164,13 +165,13 @@ static void load_consoles(void)
             rest += strspn(rest, " \t");
             snprintf(c->tty, sizeof c->tty, "%s", p);
             snprintf(c->line, sizeof c->line, "%s", rest);
-            n_consoles++;
+            n_terminals++;
         }
         fclose(f);
     }
 
-    for (int i = 0; i < n_consoles; i++) {
-        struct console *c = &consoles[i];
+    for (int i = 0; i < n_terminals; i++) {
+        struct terminal *c = &terminals[i];
         int argc = 0;
         for (char *tok = strtok(c->line, " \t"); tok && argc < MAX_ARGS - 1;
              tok = strtok(NULL, " \t"))
@@ -181,7 +182,7 @@ static void load_consoles(void)
     }
 }
 
-static void start_console(struct console *c)
+static void start_terminal(struct terminal *c)
 {
     char dev[64];
     snprintf(dev, sizeof dev, "/dev/%.31s", c->tty);
@@ -216,8 +217,8 @@ static void start_console(struct console *c)
 
 static void child_exited(pid_t pid)
 {
-    for (int i = 0; i < n_consoles; i++) {
-        struct console *c = &consoles[i];
+    for (int i = 0; i < n_terminals; i++) {
+        struct terminal *c = &terminals[i];
         if (c->pid != pid)
             continue;
         c->pid = 0;
@@ -248,7 +249,7 @@ static void shutdown_system(unsigned int how)
                      : how == RB_HALT_SYSTEM ? "halt" : "reboot";
     say("system going down (%s)", what);
 
-    run_script(RC_SHUTDOWN);
+    run_script(SHUTDOWN);
 
     kill(-1, SIGTERM);
     for (int i = 0; i < 20; i++) {              /* up to 2 s to exit cleanly */
@@ -286,7 +287,7 @@ static void handle_signal(int sig)
 int main(void)
 {
     if (getpid() != 1) {
-        fprintf(stderr, "init: must run as process 1\n");
+        fprintf(stderr, "keeper: must run as process 1\n");
         return 1;
     }
 
@@ -304,24 +305,24 @@ int main(void)
     mount_kernel_filesystems();
     open_console();
 
-    run_script(RC_BOOT);
-    load_consoles();
+    run_script(STARTUP);
+    load_terminals();
 
     for (;;) {
         siginfo_t info;
         struct timespec poll = {0, 0}, tick = {1, 0};
         int sig;
 
-        /* Handle everything already pending before starting consoles, so a
+        /* Handle everything already pending before starting terminals, so a
          * shutdown requested during boot happens immediately. */
         while ((sig = sigtimedwait(&handled, &info, &poll)) > 0)
             handle_signal(sig);
         reap();
 
         time_t now = time(NULL);
-        for (int i = 0; i < n_consoles; i++)
-            if (consoles[i].pid == 0 && now >= consoles[i].next_start)
-                start_console(&consoles[i]);
+        for (int i = 0; i < n_terminals; i++)
+            if (terminals[i].pid == 0 && now >= terminals[i].next_start)
+                start_terminal(&terminals[i]);
 
         /* Sleep until a signal arrives or a second passes (for restarts
          * that are waiting out a back-off delay). */

@@ -1,0 +1,39 @@
+#!/core/cmd/sh
+# checkup — checks that a freshly booted system works. Runs automatically when
+# the kernel command line contains mtp.test=1 (that is what CI does).
+# Run it by hand any time: /core/boot/checkup
+export PATH=/core/cmd
+fails=0
+
+check() {
+    desc="$1"; shift
+    if "$@" >/dev/null 2>&1; then
+        echo "  ok    $desc"
+    else
+        echo "  FAIL  $desc"
+        fails=$((fails + 1))
+    fi
+}
+
+echo "CHECKUP START"
+check "keeper is process 1"          grep -qx keeper /proc/1/comm
+check "/proc mounted"                grep -q " /proc proc " /proc/mounts
+check "/sys mounted"                 grep -q " /sys sysfs " /proc/mounts
+check "/dev is devtmpfs"             grep -q " /dev devtmpfs " /proc/mounts
+check "/run and /tmp are tmpfs"      sh -c 'grep -q " /run tmpfs " /proc/mounts && grep -q " /tmp tmpfs " /proc/mounts'
+check "no /bin, /usr, /lib or /home"  sh -c 'for d in /bin /usr /sbin /lib /root /home; do [ -e $d ] && exit 1; done; exit 0'
+check "commands live in /core/cmd"   sh -c '[ "$(command -v ls)" = /core/cmd/ls ]'
+check "hostname set"                 sh -c '[ "$(hostname)" = "$(cat /settings/hostname)" ]'
+check "kernel modules installed"     test -f "/core/drivers/$(uname -r)/modules.dep"
+check "module loading works"         modprobe -q e1000e
+check "hotplug runs mdev"            sh -c '[ "$(cat /proc/sys/kernel/hotplug)" = /core/cmd/mdev ]'
+check "loopback is up"               sh -c 'ip addr show lo | grep -q "inet 127.0.0.1"'
+check "can write to /tmp"            sh -c 'echo hi > /tmp/t && [ "$(cat /tmp/t)" = hi ]'
+check "pipes and job control"        sh -c 'sleep 0 & wait; echo abc | grep -q b'
+check "vi present"                   test -x /core/cmd/vi
+
+if [ "$fails" -eq 0 ]; then
+    echo "CHECKUP PASS"
+else
+    echo "CHECKUP FAIL ($fails)"
+fi

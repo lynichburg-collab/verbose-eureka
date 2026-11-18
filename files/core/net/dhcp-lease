@@ -1,7 +1,7 @@
-#!/system/bin/sh
+#!/core/cmd/sh
 # Called by udhcpc when a DHCP lease changes. Applies the address, the
 # default route and DNS servers.
-export PATH=/system/bin
+export PATH=/core/cmd
 [ -n "$interface" ] || exit 1
 
 case "$1" in
