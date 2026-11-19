@@ -142,6 +142,7 @@ assemble_rootfs() {
     # Our filesystem layout. See README: Filesystem layout.
     mkdir -p "$ROOTFS"/core/{cmd,boot,net,drivers,firmware,share} \
              "$ROOTFS"/{settings,users/root,var/log,dev,proc,sys,run,tmp}
+    chmod 0600 "$ROOTFS/settings/shadow"
     chmod 1777 "$ROOTFS/tmp"
     chmod 0700 "$ROOTFS/users/root"
     # Compatibility link: musl and a few BusyBox commands look in /etc. This

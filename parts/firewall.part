@@ -1,0 +1,16 @@
+# firewall: blocks every incoming connection (nftables, no other tools).
+# Source: src/firewall/.
+NAME=firewall
+VERSION="$OS_VERSION"
+SOURCE_LOCAL=src/firewall
+INPUTS="src/firewall"
+
+build() {
+    # shellcheck disable=SC2086
+    $TARGET_CC $TARGET_CFLAGS -Wall -Wextra -Werror -o "$BUILD/firewall" "$SRC/firewall.c" $TARGET_LDFLAGS
+    strip "$BUILD/firewall"
+}
+
+install() {
+    command install -D -m 0755 "$BUILD/firewall" "$ROOTFS/core/cmd/firewall"
+}

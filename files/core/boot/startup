@@ -9,6 +9,9 @@ echo "Starting $PRETTY_NAME"
 
 hostname -F /settings/hostname
 
+# Kernel hardening (see the file for what each setting does).
+sysctl -q -p /settings/hardening
+
 # --- Hardware --------------------------------------------------------------
 # Firmware for Wi-Fi cards and GPUs lives in /core/firmware.
 if [ -w /sys/module/firmware_class/parameters/path ]; then
@@ -27,6 +30,14 @@ if [ -f "/core/drivers/$kver/modules.dep" ]; then
 fi
 mdev -s
 
+# --- Logs ------------------------------------------------------------------
+# Created here, by root, before anything else can create them: owned by root,
+# readable by admins, writable by root only.
+mkdir -p /var/log
+for log in /var/log/activity /var/log/tripwire; do
+    : >> "$log"; chown root:admin "$log"; chmod 0640 "$log"
+done
+
 # --- Activity log ----------------------------------------------------------
 # recorder logs every program run and every network connection from here on.
 recorder &
@@ -43,6 +54,9 @@ done
 for d in /var /settings /root; do
     mount --bind "$d" "$d" && mount -o remount,bind,nosuid,nodev,noexec "$d"
 done
+
+# --- Firewall: up before the network is --------------------------------------
+firewall on >/dev/null || echo "WARNING: firewall failed to start"
 
 # --- Network ---------------------------------------------------------------
 ip link set lo up

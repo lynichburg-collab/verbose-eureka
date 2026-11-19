@@ -41,10 +41,11 @@ trap (see [Platitudes](#platitudes) and [Tripwires](#tripwires)).
 | `/core/firmware` | Device firmware (Wi-Fi, GPU) |
 | `/core/share` | Shared data (the `welcome` message) |
 | `/core/tripwire` | The decoy program, the bait list, the bait-file handler |
-| `/settings` | System settings: `hostname`, `terminals`, `about`, users, shell `profile` |
+| `/settings` | System settings: `hostname`, `terminals`, `about`, `hardening`, accounts (`passwd`, `group`, `shadow`), shell `profile` |
 | `/users` | People's files (`/users/root` for root) |
 | `/bin`, `/usr/bin`, `/root` | Decoys and bait only. Never used by the OS. |
-| `/var/log` | `activity` (everything that happened) and `tripwire` (decoy hits) |
+| `/var/log` | `activity` (everything that happened) and `tripwire` (decoy hits). Root-owned, readable by admins. |
+| `/var/lib/mtp-auth` | Wrong-password counters |
 | `/run`, `/tmp` | In-memory, wiped at every boot |
 | `/dev`, `/proc`, `/sys` | Kernel interfaces (names fixed by the kernel) |
 | `/etc` | Temporary compatibility link to `/settings`, because musl and some BusyBox commands look there. It will be removed. |
@@ -59,14 +60,64 @@ and BusyBox look for them by name.
 2. keeper mounts `/proc`, `/sys`, `/dev`, `/run` and `/tmp`.
 3. keeper runs `/core/boot/startup`. That script sets the hostname, loads
    drivers for the hardware it finds and starts wired networking.
-4. keeper starts a shell on each terminal listed in `/settings/terminals`, and
-   restarts it if it exits.
+4. keeper starts `signin` on each terminal listed in `/settings/terminals`
+   (screens 1-4 and the serial port), and restarts it when it exits.
 5. `poweroff`, `reboot` and `halt` ask keeper to shut down. keeper runs
    `/core/boot/shutdown`, stops every process, syncs the disks and turns the
    machine off.
 
-`/core/boot/checkup` tests that the system works (27 checks). It runs
+`/core/boot/checkup` tests that the system works (36 checks). It runs
 automatically in CI and you can run it by hand at any time.
+
+## Accounts and root
+
+You work as yourself, not as root. The very first time the system starts,
+`signin` asks you to press Enter on one of the screens and create your
+account there (username and password, never stored in this repository).
+Your account is an admin.
+
+- **`root` can't sign in.** Its password is locked.
+- **`elevate <command>`** runs one command as root; `elevate` alone opens a
+  root shell. It asks for *your* password, and only works at the machine's
+  own keyboard (or serial port), in the foreground. Remote sessions,
+  terminal windows and background programs are refused, so malware can
+  neither use it nor trigger its delays. It is the only setuid program on the
+  system. Every use and refusal is logged.
+- **`accounts`** (run with elevate): `list`, `add <name> [--no-admin]`,
+  `password <name>`, `remove <name>`, `reset-waits`.
+- Passwords are stored as SHA-512 crypt with 200,000 rounds, in a file only
+  root can read. They must be at least 10 characters.
+
+**Wrong-password waits** are counted per terminal, so nobody can lock you out
+of all of them; if one is waiting, use another (Ctrl+Alt+F2, F3, F4).
+Consecutive wrong passwords on one terminal:
+
+| Wrong in a row | 1-3 | 4 | 5 | 6 | 7 | 8 | 9 | 10+ |
+|---|---|---|---|---|---|---|---|---|
+| Wait before the next try | none | 30 s | 1 min | 2 min | 5 min | 15 min | 30 min | 1 hour (stays) |
+
+Anything typed during a wait is thrown away. A correct password resets the
+count. When you sign in, you're told how many wrong attempts were made on
+your account since last time.
+
+## Firewall
+
+`firewall` (our own program, talking to the kernel's nftables directly)
+blocks every incoming connection. It starts before the network does.
+Allowed in: this machine talking to itself, replies to connections this
+machine started, and ICMPv6 (which IPv6 needs to work). Everything else is
+counted and dropped. Outgoing traffic is not restricted.
+`firewall status` shows how many packets were blocked (`elevate` needed to
+read it); `elevate firewall off` / `on` for troubleshooting.
+
+## Kernel hardening
+
+`/settings/hardening` is applied at boot. It switches off tricks used to
+climb from a normal user to root or to snoop on other programs: only root may
+inspect another program's memory (Yama), kernel addresses and logs are hidden,
+`io_uring` and `kexec` are disabled, symlink/hardlink/FIFO tricks in shared
+folders are blocked, setuid programs never dump memory, and several network
+spoofing tricks are ignored. Each line is commented.
 
 ## Activity log
 
@@ -103,11 +154,11 @@ on their own (the connection that follows them is), and shell built-ins like
   keep working.
 
 Limits, honestly: someone with full root access can undo mounts, kill the
-recorder or edit logs. The protections make that noisy and slower, not
-impossible. While the OS runs from memory (milestone 1) the logs reset at
-every boot. Planned, but not built because they add prompts to daily use: an
-outbound network allowlist, and approval of sensitive actions only at the
-physical keyboard.
+recorder or edit logs. Accounts, `elevate` and the hardening exist to make
+getting root hard; the logs make it noisy. While the OS runs from memory
+(milestone 1), accounts and logs reset at every boot, so the first-start
+setup appears each time. Planned: an outbound network allowlist, and (with
+the installer) disk encryption, locked boot options and Secure Boot.
 
 ## Platitudes
 
@@ -126,9 +177,10 @@ at all is worth knowing about.
 - **Decoy programs** at `/bin/bash`, `/usr/bin/{env,python3,perl,curl,wget,sudo}`.
   One small static program ([`src/decoy/decoy.c`](src/decoy/decoy.c)) acts
   like each of them: answers `--version`, accepts scripts and downloads, offers
-  a fake shell, and has a `sudo` that rejects every password. It does nothing
-  and logs what ran, its arguments and what started it. Passwords typed into
-  the fake `sudo` are never logged.
+  a fake shell, and has a `sudo` that rejects every password. It does nothing.
+  `recorder` (running as root) logs every decoy run, with its arguments and
+  what started it, so whoever ran it can't erase the entry. Passwords typed
+  into the fake `sudo` are never logged.
 - **Bait files**: `/root/.ssh/id_rsa`, `/settings/master.key` and
   `/settings/recovery-codes` look real but are random bytes generated at build
   time. `inotifyd` watches them and logs any open, change, move or delete.
@@ -182,6 +234,8 @@ reassembles the root filesystem only, and `./forge clean` deletes build output.
 | `src/keeper/` | keeper, our process 1 |
 | `src/decoy/` | The tripwire decoy program |
 | `src/recorder/` | recorder, which writes the activity log |
+| `src/auth/` | signin, elevate and accounts |
+| `src/firewall/` | firewall |
 | `files/` | Files copied as-is into the OS (settings, scripts, welcome) |
 | `.github/workflows/` | CI: build and boot test on every push |
 
@@ -189,7 +243,8 @@ reassembles the root filesystem only, and `./forge clean` deletes build output.
 
 1. **Terminal.** Done in an emulator: kernel, keeper, shell, core tools, wired
    networking, driver autoloading and hotplug, platitudes, tripwires,
-   activity log, read-only system and no-run data folders.
+   activity log, read-only system and no-run data folders, accounts with
+   `elevate`, firewall, kernel hardening.
    Still to do: build our own cross-compiler and C library instead of using
    the host's musl, patching its hardcoded `/etc` and `/bin/sh` paths, then
    remove the `/etc` link.

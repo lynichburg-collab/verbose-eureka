@@ -6,10 +6,10 @@
  * program are placed there under familiar names (bash, python3, curl...).
  * Nothing legitimate on this system ever runs them.
  *
- * When one runs, it:
- *   - writes a line to /var/log/tripwire saying what ran, with what
- *     arguments, and which program started it, and
- *   - pretends to work while doing nothing.
+ * When one runs, it pretends to work while doing nothing. The run itself is
+ * logged to /var/log/tripwire by recorder (as root, so whoever ran the decoy
+ * can't hide it). The decoy adds detail it alone can see, such as commands
+ * typed into the fake shell, when the log is writable.
  *
  * `tripwires` shows the log; the login shell warns when it isn't empty.
  */
@@ -62,26 +62,11 @@ static void note(const char *fmt, const char *detail)
         n = sizeof line - 1;
     snprintf(line + n, sizeof line - n, fmt, detail);
 
-    mkdir("/var/log", 0755);
-    int fd = open(LOG_FILE, O_WRONLY | O_APPEND | O_CREAT | O_CLOEXEC, 0600);
+    int fd = open(LOG_FILE, O_WRONLY | O_APPEND | O_CLOEXEC);   /* never create it */
     if (fd < 0)
         return;
     dprintf(fd, "%s\n", line);
     close(fd);
-}
-
-static void note_args(int argc, char **argv)
-{
-    char args[512] = "";
-    size_t used = 0;
-    for (int i = 1; i < argc && used < sizeof args - 1; i++) {
-        int w = snprintf(args + used, sizeof args - used, "%s%s",
-                         i > 1 ? " " : "", argv[i]);
-        if (w < 0)
-            break;
-        used += (size_t)w;
-    }
-    note("ran: %s", argc > 1 ? args : "(no arguments)");
 }
 
 static int has_arg(int argc, char **argv, const char *a)
@@ -160,6 +145,7 @@ static int fake_sudo(void)
         putchar('\n');
         if (!got)
             break;
+        note("%s", "typed a password into the fake sudo (not recorded)");
         sleep(2);
         if (attempt < 2)
             puts("Sorry, try again.");
@@ -176,8 +162,6 @@ int main(int argc, char **argv)
     else
         snprintf(self, sizeof self, "%s", argv[0] ? argv[0] : "?");
     name = strrchr(self, '/') ? strrchr(self, '/') + 1 : self;
-
-    note_args(argc, argv);
 
     if (has_arg(argc, argv, "--version") || has_arg(argc, argv, "-V")) {
         print_version();

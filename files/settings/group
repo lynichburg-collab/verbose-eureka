@@ -4,3 +4,4 @@ disk:x:6:
 audio:x:29:
 video:x:44:
 input:x:101:
+admin:x:10:

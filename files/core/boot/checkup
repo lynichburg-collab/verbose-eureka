@@ -59,6 +59,32 @@ check "devices are logged"           sh -c '
     ACTION=add SUBSYSTEM=usb DEVTYPE=usb_device DEVPATH=/devices/checkup-usb mdev
     grep -q "  device  add usb checkup-usb" /var/log/activity'
 
+check "root is locked (no direct sign-in)" grep -q "^root:!:" /settings/shadow
+check "password file is root-only"   sh -c '[ "$(stat -c %a /settings/shadow)" = 600 ]'
+check "elevate is the only setuid program" sh -c '
+    [ "$(find / -xdev -type f -perm -4000 2>/dev/null)" = /core/cmd/elevate ]'
+check "accounts can be created"      sh -c '
+    echo "checkup-password-1" | accounts add checkup-user --no-admin >/dev/null &&
+    echo "checkup-password-2" | accounts add checkup-admin >/dev/null &&
+    grep -qF "checkup-user:\$6\$rounds=200000\$" /settings/shadow &&
+    grep -q "^admin:.*checkup-admin" /settings/group'
+check "elevate refuses non-admins"   sh -c '
+    ! chpst -u checkup-user elevate true </dev/null 2>/dev/null &&
+    grep -q "refused .checkup-user. (not an admin)" /var/log/activity'
+check "elevate only at the keyboard" sh -c '
+    ! chpst -u checkup-admin elevate true </dev/null 2>/dev/null &&
+    grep -q "refused .checkup-admin. (not at the keyboard)" /var/log/activity'
+check "accounts can be removed"      sh -c '
+    accounts remove checkup-user >/dev/null && accounts remove checkup-admin >/dev/null &&
+    rm -rf /users/checkup-user /users/checkup-admin &&
+    ! grep -q checkup- /settings/passwd /settings/shadow /settings/group'
+check "kernel hardening applied"     sh -c '
+    [ "$(cat /proc/sys/kernel/yama/ptrace_scope)" = 2 ] &&
+    [ "$(cat /proc/sys/kernel/kptr_restrict)" = 2 ] &&
+    [ "$(cat /proc/sys/kernel/io_uring_disabled)" = 2 ] &&
+    [ "$(cat /proc/sys/fs/protected_symlinks)" = 1 ]'
+check "firewall is on"               firewall status
+
 # Tripwire tests touch the decoys on purpose. Keep the log as it was before.
 cp /var/log/tripwire /tmp/tripwire.saved 2>/dev/null || : > /tmp/tripwire.saved
 check "decoy programs log when run"  sh -c '

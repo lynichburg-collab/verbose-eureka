@@ -40,6 +40,9 @@ install() {
     chmod 0600 "$ROOTFS/root/.ssh/id_rsa" "$ROOTFS/settings/master.key" \
                "$ROOTFS/settings/recovery-codes"
 
+    # The decoy list, read by recorder to log decoy runs as root.
+    printf '%s\n' $DECOY_PATHS > "$ROOTFS/core/tripwire/decoys"
+
     # The list of bait files, read by startup to watch them.
     printf '%s\n' /root/.ssh/id_rsa /settings/master.key /settings/recovery-codes \
         > "$ROOTFS/core/tripwire/bait"

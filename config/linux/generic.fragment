@@ -30,6 +30,17 @@ CONFIG_INIT_ON_ALLOC_DEFAULT_ON=y
 CONFIG_SECURITY_DMESG_RESTRICT=y
 CONFIG_LEGACY_TIOCSTI=n
 
+# Yama: a program can't read or control another program's memory unless it
+# started it (stops one process stealing secrets from another).
+CONFIG_SECURITY_YAMA=y
+
+# --- Firewall (nftables; loaded by /core/cmd/firewall) ---
+CONFIG_NF_TABLES=y
+CONFIG_NF_TABLES_INET=y
+CONFIG_NF_TABLES_IPV4=y
+CONFIG_NF_TABLES_IPV6=y
+CONFIG_NFT_CT=y
+
 # --- Storage and filesystems ---
 CONFIG_BLK_DEV_NVME=y
 CONFIG_SATA_AHCI=y

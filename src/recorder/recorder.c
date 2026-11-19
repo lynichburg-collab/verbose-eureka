@@ -32,6 +32,9 @@
 #include <unistd.h>
 
 #define LOG_FILE    "/var/log/activity"
+#define TRIP_FILE   "/var/log/tripwire"
+#define DECOY_LIST  "/core/tripwire/decoys"
+#define ADMIN_GID   10
 #define LOG_OLD     "/var/log/activity.1"
 #define LOG_MAX     (4 * 1024 * 1024)       /* rotate after 4 MB */
 #define SELF        "/core/cmd/recorder"
@@ -60,10 +63,54 @@ static void write_line(const char *kind, const char *fmt, ...)
     if (stat(LOG_FILE, &st) == 0 && st.st_size > LOG_MAX)
         rename(LOG_FILE, LOG_OLD);
     mkdir("/var/log", 0755);
-    int fd = open(LOG_FILE, O_WRONLY | O_APPEND | O_CREAT | O_CLOEXEC, 0600);
+    int fd = open(LOG_FILE, O_WRONLY | O_APPEND | O_CREAT | O_CLOEXEC, 0640);
     if (fd < 0)
         return;
+    if (fstat(fd, &st) == 0 && (st.st_uid != 0 || st.st_gid != ADMIN_GID)) {
+        if (fchown(fd, 0, ADMIN_GID) < 0) { }
+        fchmod(fd, 0640);
+    }
     if (write(fd, line, (size_t)n) < 0) { /* nothing more we can do */ }
+    close(fd);
+}
+
+/* Decoy programs (tripwires). A run of one is also written to the tripwire
+ * log, by us (root), so the person who ran it can't hide it. */
+static char decoys[16][64];
+static int n_decoys;
+
+static void load_decoys(void)
+{
+    FILE *f = fopen(DECOY_LIST, "r");
+    char line[128];
+    while (f && n_decoys < 16 && fgets(line, sizeof line, f)) {
+        line[strcspn(line, "\n")] = '\0';
+        if (line[0] == '/')
+            snprintf(decoys[n_decoys++], sizeof decoys[0], "%.63s", line);
+    }
+    if (f)
+        fclose(f);
+}
+
+static int is_decoy(const char *path)
+{
+    for (int i = 0; i < n_decoys; i++)
+        if (strcmp(path, decoys[i]) == 0)
+            return 1;
+    return 0;
+}
+
+static void tripwire_line(const char *path, long uid, long pid, long ppid, const char *args)
+{
+    char stamp[32];
+    time_t now = time(NULL);
+    strftime(stamp, sizeof stamp, "%Y-%m-%d %H:%M:%S", localtime(&now));
+    int fd = open(TRIP_FILE, O_WRONLY | O_APPEND | O_CREAT | O_CLOEXEC, 0640);
+    if (fd < 0)
+        return;
+    if (fchown(fd, 0, ADMIN_GID) < 0) { }
+    dprintf(fd, "%s  %s  uid=%ld pid=%ld parent=%ld  ran: %s\n", stamp, path, uid, pid, ppid,
+            args[0] ? args : "(no arguments)");
     close(fd);
 }
 
@@ -228,6 +275,10 @@ static void emit(struct event *e)
                        e->uid, e->pid, e->ppid,
                        e->args[0] ? e->args : e->target[0] ? e->target : "?", why);
             return;
+        }
+        if (is_decoy(e->exe)) {
+            const char *rest = strchr(e->args, ' ');
+            tripwire_line(e->exe, e->uid, e->pid, e->ppid, rest ? rest + 1 : "");
         }
         int show_exe = e->exe[0] && strcmp(e->exe, BUSYBOX) != 0 &&
                        strcmp(base(e->exe), base(e->args)) != 0;
@@ -406,6 +457,7 @@ static int run_daemon(void)
         return 1;
     }
 
+    load_decoys();
     write_line("boot", "recorder started: logging programs and network connections");
 
     /* Debugging aid: RECORDER_RAW=/path also dumps every raw kernel record. */

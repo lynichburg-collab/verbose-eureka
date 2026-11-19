@@ -1,0 +1,36 @@
+# Kernel settings applied at every boot (startup runs: sysctl -p this file).
+# Each one closes a trick attackers use to climb from a normal user to root
+# or to snoop on other programs. None of them change normal use.
+
+# Only root may inspect or control another program (debuggers need elevate).
+kernel.yama.ptrace_scope = 2
+# Hide kernel memory addresses and the kernel log from normal users.
+kernel.kptr_restrict = 2
+kernel.dmesg_restrict = 1
+# Kernel performance counters: root only.
+kernel.perf_event_paranoid = 2
+# No swapping in a different kernel at runtime.
+kernel.kexec_load_disabled = 1
+# io_uring: a frequent source of kernel bugs; nothing here needs it.
+kernel.io_uring_disabled = 2
+# Don't load obscure terminal line disciplines on request.
+dev.tty.ldisc_autoload = 0
+# Block symlink/hardlink/FIFO tricks in shared folders like /tmp.
+fs.protected_symlinks = 1
+fs.protected_hardlinks = 1
+fs.protected_fifos = 2
+fs.protected_regular = 2
+# setuid programs (elevate) never write memory dumps.
+fs.suid_dumpable = 0
+
+# Network: ignore traffic redirection tricks and spoofed sources.
+net.ipv4.tcp_syncookies = 1
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.default.rp_filter = 1
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.default.accept_redirects = 0
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.all.accept_source_route = 0
+net.ipv6.conf.all.accept_redirects = 0
+net.ipv6.conf.default.accept_redirects = 0
+net.ipv4.icmp_echo_ignore_broadcasts = 1

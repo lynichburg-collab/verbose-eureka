@@ -1,7 +1,10 @@
 # Which program runs on which terminal. keeper starts each one at boot and
 # restarts it when it exits.   <tty>  <command> [args...]
 #
-# Development mode: straight to a root shell, no login. The login prompt
-# arrives with user accounts (next milestone).
-tty1    /core/cmd/sh -l
-ttyS0   /core/cmd/sh -l
+# signin asks for your name and password (and creates your account on the
+# very first start). Ctrl+Alt+F2..F4 switch to the other screens.
+tty1    /core/cmd/signin
+tty2    /core/cmd/signin
+tty3    /core/cmd/signin
+tty4    /core/cmd/signin
+ttyS0   /core/cmd/signin

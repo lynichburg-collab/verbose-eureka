@@ -1,0 +1,22 @@
+# Accounts: signin (terminal sign-in and first-start setup), elevate (run as
+# root, keyboard only), accounts (manage people). Source: src/auth/.
+NAME=auth
+VERSION="$OS_VERSION"
+SOURCE_LOCAL=src/auth
+INPUTS="src/auth"
+
+build() {
+    local p
+    for p in signin elevate accounts; do
+        # shellcheck disable=SC2086
+        $TARGET_CC $TARGET_CFLAGS -Wall -Wextra -Werror -o "$BUILD/$p" "$SRC/$p.c" $TARGET_LDFLAGS
+        strip "$BUILD/$p"
+    done
+}
+
+install() {
+    command install -D -m 0755 "$BUILD/signin"   "$ROOTFS/core/cmd/signin"
+    command install -D -m 0755 "$BUILD/accounts" "$ROOTFS/core/cmd/accounts"
+    # setuid root: the only program on the system with that power.
+    command install -D -m 4755 "$BUILD/elevate"  "$ROOTFS/core/cmd/elevate"
+}
