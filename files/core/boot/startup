@@ -9,6 +9,18 @@ echo "Starting $PRETTY_NAME"
 
 hostname -F /settings/hostname
 
+# Console colors (MTplatitudes theme) on the machine's screens.
+if [ -f /settings/console-colors ]; then
+    palette=""
+    while read -r slot rgb _; do
+        case "$slot" in ''|\#*) continue ;; esac
+        palette="$palette$(printf '\033]P%x%s' "$slot" "$rgb")"
+    done < /settings/console-colors
+    for t in /dev/tty1 /dev/tty2 /dev/tty3 /dev/tty4; do
+        [ -c "$t" ] && printf '%s\033[2J\033[H' "$palette" > "$t"
+    done
+fi
+
 # Kernel hardening (see the file for what each setting does).
 sysctl -q -p /settings/hardening
 

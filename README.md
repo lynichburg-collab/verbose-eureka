@@ -1,3 +1,5 @@
+<img src="branding/icon.png" width="96" align="right" alt="Emti">
+
 # MTplatitudes
 
 A Linux distribution built entirely from source, not based on any other
@@ -160,6 +162,14 @@ getting root hard; the logs make it noisy. While the OS runs from memory
 setup appears each time. Planned: an outbound network allowlist, and (with
 the installer) disk encryption, locked boot options and Secure Boot.
 
+## Mascot
+
+**Emti** (from "MT", as in empty) is endlessly confident and says absolutely
+nothing; her speech bubble is always empty. She greets you after signing in,
+drawn in colored blocks on the console. Artwork, the pixel version and how to
+regenerate the console art are in [`branding/`](branding/README.md). The
+console's 16-color theme is in `/settings/console-colors`.
+
 ## Platitudes
 
 Commands that sound important, show a progress bar, report success and do
@@ -237,6 +247,7 @@ reassembles the root filesystem only, and `./forge clean` deletes build output.
 | `src/auth/` | signin, elevate and accounts |
 | `src/firewall/` | firewall |
 | `files/` | Files copied as-is into the OS (settings, scripts, welcome) |
+| `branding/` | Emti, the mascot: artwork, icon, pixel version |
 | `.github/workflows/` | CI: build and boot test on every push |
 
 ## Roadmap

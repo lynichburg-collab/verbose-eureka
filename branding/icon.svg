@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <title>MTplatitudes icon: Emti</title>
+  <defs><clipPath id="round"><circle cx="128" cy="128" r="120"/></clipPath></defs>
+  <circle cx="128" cy="128" r="124" fill="#2B2D42"/>
+  <g clip-path="url(#round)">
+    <rect width="256" height="256" fill="#33384F"/>
+    <g transform="translate(-77 -6) scale(0.8)">
+  
+  <defs>
+    <linearGradient id="hair" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7EE6D6"/>
+      <stop offset="1" stop-color="#3FB3A6"/>
+    </linearGradient>
+    <linearGradient id="hairDark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4CC2B4"/>
+      <stop offset="1" stop-color="#2A8E85"/>
+    </linearGradient>
+    <linearGradient id="iris" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1E3F5A"/>
+      <stop offset="0.55" stop-color="#2F7C8F"/>
+      <stop offset="1" stop-color="#7FE0D2"/>
+    </linearGradient>
+    <linearGradient id="hoodie" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#454B6B"/>
+      <stop offset="1" stop-color="#33384F"/>
+    </linearGradient>
+    <linearGradient id="key" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFE08A"/>
+      <stop offset="1" stop-color="#E0A93B"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+  </defs>
+
+
+  <!-- Back hair -->
+  <path d="M132 220 C120 120 190 72 256 72 C322 72 392 120 380 220
+           C392 300 400 360 372 410 C352 380 344 350 340 320
+           L172 320 C168 350 160 380 140 410 C112 360 120 300 132 220 Z"
+        fill="url(#hairDark)"/>
+
+  <!-- Body: oversized hoodie -->
+  <path d="M150 470 C150 400 186 352 256 352 C326 352 362 400 362 470 Z" fill="url(#hoodie)"/>
+  <!-- Hood rim behind the neck -->
+  <path d="M196 352 C206 336 306 336 316 352 C300 372 212 372 196 352 Z" fill="#2E3247"/>
+  <!-- Sleeve paws -->
+  <ellipse cx="170" cy="462" rx="34" ry="24" fill="#3C4260"/>
+  <ellipse cx="342" cy="462" rx="34" ry="24" fill="#3C4260"/>
+  <path d="M144 452 Q170 440 196 452" stroke="#7EE6D6" stroke-width="4" stroke-linecap="round" fill="none"/>
+  <path d="M316 452 Q342 440 368 452" stroke="#7EE6D6" stroke-width="4" stroke-linecap="round" fill="none"/>
+  <!-- Drawstrings -->
+  <path d="M236 366 C234 390 232 404 230 420" stroke="#7EE6D6" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <path d="M276 366 C278 390 280 404 282 420" stroke="#7EE6D6" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <circle cx="230" cy="424" r="6" fill="#7EE6D6"/>
+  <circle cx="282" cy="424" r="6" fill="#7EE6D6"/>
+  <!-- Little "~$" on the hoodie -->
+  <text x="304" y="428" text-anchor="middle" font-family="DejaVu Sans Mono, monospace"
+        font-size="18" font-weight="bold" fill="#7EE6D6">~$_</text>
+
+  <!-- Lanyard and key (keeper / elevate) -->
+  <path d="M214 350 C220 372 240 382 256 386 C272 382 292 372 298 350" stroke="#E2E4F0"
+        stroke-width="4" fill="none"/>
+  <g transform="translate(256 386) rotate(12) scale(0.9)">
+    <circle cx="0" cy="8" r="11" fill="url(#key)" stroke="#B5821F" stroke-width="2.5"/>
+    <circle cx="0" cy="8" r="4" fill="#33384F"/>
+    <rect x="-3.5" y="18" width="7" height="26" rx="2" fill="url(#key)" stroke="#B5821F" stroke-width="2"/>
+    <rect x="3" y="32" width="8" height="5" fill="url(#key)" stroke="#B5821F" stroke-width="1.5"/>
+    <rect x="3" y="40" width="6" height="4" fill="url(#key)" stroke="#B5821F" stroke-width="1.5"/>
+  </g>
+
+  <!-- Neck -->
+  <rect x="236" y="300" width="40" height="44" rx="12" fill="#F7CDB9"/>
+
+  <!-- Face -->
+  <path d="M152 212 C152 150 196 118 256 118 C316 118 360 150 360 212
+           C360 280 312 322 256 322 C200 322 152 280 152 212 Z" fill="#FFE5D6"/>
+
+  <!-- Eyebrows -->
+  <path d="M196 196 Q214 188 232 194" stroke="#2A8E85" stroke-width="4" stroke-linecap="round" fill="none"/>
+  <path d="M280 194 Q298 188 316 196" stroke="#2A8E85" stroke-width="4" stroke-linecap="round" fill="none"/>
+
+  <!-- Side locks of hair framing the face -->
+  <path d="M150 170 C138 230 140 290 160 336 C170 300 172 250 178 200 Z" fill="url(#hair)"/>
+  <path d="M362 170 C374 230 372 290 352 336 C342 300 340 250 334 200 Z" fill="url(#hair)"/>
+
+  <!-- Bangs -->
+  <path d="M142 204 C136 116 196 76 256 76 C316 76 376 116 370 204
+           Q358 196 350 214 Q346 186 336 168
+           Q332 192 320 210 Q318 180 306 156
+           Q300 190 290 216 Q286 186 276 160
+           Q270 186 258 204 Q252 180 240 156
+           Q232 188 222 216 Q218 186 206 160
+           Q196 186 190 210 Q184 186 176 168
+           Q168 190 162 214 Q156 196 142 204 Z"
+        fill="url(#hair)"/>
+  <!-- Hair shine -->
+  <path d="M196 104 C220 92 250 90 270 94" stroke="#C8FFF6" stroke-width="7" stroke-linecap="round" fill="none" opacity="0.8"/>
+
+  <!-- Ahoge -->
+  <path d="M250 80 C238 58 248 34 276 36 C264 44 258 58 264 80 Z" fill="url(#hair)"/>
+
+  <!-- Cursor hair clip, softly glowing -->
+  <rect x="318" y="128" width="16" height="28" rx="2" fill="#7EFFC8" filter="url(#glow)" opacity="0.9"/>
+  <rect x="320" y="130" width="12" height="24" rx="1.5" fill="#B6FFE0" stroke="#2B2D42" stroke-width="3"/>
+
+  <!-- Eyes -->
+  <g>
+    <ellipse cx="214" cy="236" rx="25" ry="31" fill="#FFFFFF"/>
+    <ellipse cx="214" cy="240" rx="21" ry="27" fill="url(#iris)"/>
+    <ellipse cx="214" cy="244" rx="9" ry="12" fill="#14283A"/>
+    <ellipse cx="206" cy="228" rx="8" ry="10" fill="#FFFFFF"/>
+    <circle cx="223" cy="256" r="4" fill="#FFFFFF" opacity="0.9"/>
+    <path d="M186 214 Q214 196 242 214" stroke="#2B2D42" stroke-width="6" stroke-linecap="round" fill="none"/>
+    <path d="M187 216 L179 210" stroke="#2B2D42" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <g>
+    <ellipse cx="298" cy="236" rx="25" ry="31" fill="#FFFFFF"/>
+    <ellipse cx="298" cy="240" rx="21" ry="27" fill="url(#iris)"/>
+    <ellipse cx="298" cy="244" rx="9" ry="12" fill="#14283A"/>
+    <ellipse cx="290" cy="228" rx="8" ry="10" fill="#FFFFFF"/>
+    <circle cx="307" cy="256" r="4" fill="#FFFFFF" opacity="0.9"/>
+    <path d="M270 214 Q298 196 326 214" stroke="#2B2D42" stroke-width="6" stroke-linecap="round" fill="none"/>
+    <path d="M325 216 L333 210" stroke="#2B2D42" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <!-- Blush -->
+  <ellipse cx="190" cy="276" rx="18" ry="9" fill="#FF9EB0" opacity="0.55"/>
+  <ellipse cx="322" cy="276" rx="18" ry="9" fill="#FF9EB0" opacity="0.55"/>
+
+  <!-- Confident little smile -->
+  <path d="M240 282 Q256 286 272 282 Q270 304 256 305 Q242 304 240 282 Z" fill="#B23A54"
+        stroke="#2B2D42" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M247 297 Q256 290 265 297 Q262 303 256 303 Q250 303 247 297 Z" fill="#FF8A9E"/>
+</g>
+  </g>
+  <circle cx="128" cy="128" r="120" fill="none" stroke="#7EE6D6" stroke-width="6"/>
+</svg>
