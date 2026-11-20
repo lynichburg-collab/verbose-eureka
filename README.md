@@ -165,8 +165,8 @@ the installer) disk encryption, locked boot options and Secure Boot.
 ## Mascot
 
 **Emti** (from "MT", as in empty) is endlessly confident and says absolutely
-nothing; her speech bubble is always empty. She greets you after signing in,
-drawn in colored blocks on the console. Artwork, the pixel version and how to
+nothing; her speech bubble is always empty. Amber hair, like an old
+amber-screen terminal. She greets you after signing in, as ASCII art. Artwork, the pixel version and how to
 regenerate the console art are in [`branding/`](branding/README.md). The
 console's 16-color theme is in `/settings/console-colors`.
 
