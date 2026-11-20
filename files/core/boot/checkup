@@ -74,6 +74,12 @@ check "elevate refuses non-admins"   sh -c '
 check "elevate only at the keyboard" sh -c '
     ! chpst -u checkup-admin elevate true </dev/null 2>/dev/null &&
     grep -q "refused .checkup-admin. (not at the keyboard)" /var/log/activity'
+check "elevate has no root shell"     sh -c '
+    chpst -u checkup-admin elevate </dev/null >/dev/null 2>&1; [ $? = 2 ]'
+check "elevate refuses shells"       sh -c '
+    chpst -u checkup-admin elevate sh -c true </dev/null >/dev/null 2>&1; [ $? = 2 ] &&
+    chpst -u checkup-admin elevate busybox sh </dev/null >/dev/null 2>&1; [ $? = 2 ] &&
+    grep -q "refused .checkup-admin. (would start a shell)" /var/log/activity'
 check "accounts can be removed"      sh -c '
     accounts remove checkup-user >/dev/null && accounts remove checkup-admin >/dev/null &&
     rm -rf /users/checkup-user /users/checkup-admin &&

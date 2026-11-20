@@ -79,12 +79,20 @@ account there (username and password, never stored in this repository).
 Your account is an admin.
 
 - **`root` can't sign in.** Its password is locked.
-- **`elevate <command>`** runs one command as root; `elevate` alone opens a
-  root shell. It asks for *your* password, and only works at the machine's
-  own keyboard (or serial port), in the foreground. Remote sessions,
-  terminal windows and background programs are refused, so malware can
-  neither use it nor trigger its delays. It is the only setuid program on the
-  system. Every use and refusal is logged.
+- **`elevate <command>`** runs one command as root. It asks for *your*
+  password **every time** (nothing is remembered between commands), and only
+  works at the machine's own keyboard (or serial port), in the foreground.
+  Remote sessions, terminal windows and background programs are refused, so
+  malware can neither use it nor trigger its delays. It is the only setuid
+  program on the system. Every use and refusal is logged.
+- **One root command at a time**, system-wide. While one runs (on any
+  screen), another `elevate` is refused and told what is running and who
+  started it. `elevate --stop` (with your password) ends it, so a stuck root
+  command can't lock you out of root.
+- **No root shells.** There is no `elevate` without a command, and it refuses
+  shells and command launchers (`sh`, `busybox`, `su`, `env`, `xargs`...),
+  since everything typed into one would run as root without asking. Programs
+  that can start a shell themselves (such as `vi` with `:!`) are a known gap.
 - **`accounts`** (run with elevate): `list`, `add <name> [--no-admin]`,
   `password <name>`, `remove <name>`, `reset-waits`.
 - Passwords are stored as SHA-512 crypt with 200,000 rounds, in a file only
