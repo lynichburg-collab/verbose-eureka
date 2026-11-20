@@ -13,7 +13,7 @@ else
     PS1='\[\e[0;33m\]\u@\h\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]$ '
 fi
 cd "$HOME" 2>/dev/null
-# Welcome screen with Emti: themed colors on the machine's own screens,
+# Welcome screen with the Mt. Platitudes logo: themed colors on the machine's own screens,
 # 24-bit color elsewhere, plain text as a fallback.
 case "$(tty)" in
     /dev/tty[0-9]*)        welcome=/core/share/welcome.vt ;;

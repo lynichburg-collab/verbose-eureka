@@ -1,14 +1,15 @@
-                [0;33m,                 [0;97m.--------------.[0m
-            [0;33m_.-//-._              [0;97m|              |[0m
-         [0;33m.-'        '-.           [0;97m'--.  .--------'[0m
-        [0;33m/           [0;92m[]  [0;33m\            [0;97m/ /[0m
-       [0;33m/  /\/\/\/\/\/\  \          [0;97m/.'[0m
-      [0;33m|  [0;97m|            |  [0;33m|[0m
-      [0;33m|  [0;97m|  .-.  .-.  |  [0;33m|[0m      [1mMTplatitudes[22m, terminal edition
-      [0;33m|  [0;97m|  [0;91m~   [0;31mw  [0;91m~  [0;97m|  [0;33m|[0m      The OS lives in /core, settings in /settings,
-      [0;33m|   [0;97m\          /   [0;33m|[0m      your files in /users.
-       [0;33m\_/ [0;97m'-.____.-' [0;33m\_/[0m
-             [0;37m|    |[0m             Try: wisdom, optimize, activity
-          [0;37m.--'    '--.[0m          To leave: elevate poweroff
-         [0;37m/  \  [0;93mo-, [0;37m/  \[0m
+                        [0;37m|[0;31m>[0m
+                        [0;33m/\                  [0;93m*[0m
+                       [0;33m/[0;97m^^[0;33m\        [0;93m.[0m
+                      [0;33m/[0;97m^^^^[0;33m\[0m
+                     [0;33m/      \[0m
+             [0;33m/\     /        \     /\        [0;93m.[0m
+            [0;33m/[0;97m^^[0;33m\   /          \   /[0;97m^^[0;33m\[0m
+           [0;33m/    \ /            \ /    \[0m
+          [0;33m/      V              V      \[0m
+    [0;37m_____[0;33m/                              \[0;37m_____[0m
+
+  [1mMTplatitudes[22m (Mt. Platitudes), terminal edition
+  The OS lives in /core, settings in /settings, your files in /users.
+  Try: wisdom, optimize, activity.  To leave: elevate poweroff
 

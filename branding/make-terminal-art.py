@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Turn Emti's ASCII art into the terminal welcome screens.
+"""Turn the Mt. Platitudes ASCII art into the terminal welcome screens.
 
 Reads:
-  branding/emti.txt      the art: plain ASCII characters
-  branding/emti.colors   the same grid, one color letter per character
+  branding/mountain.txt      the art: plain ASCII characters
+  branding/mountain.colors   the same grid, one color letter per character
   files/settings/console-colors   the console's 16 colors
 Writes:
   files/core/share/welcome.vt    the machine's own screens (palette colors)
@@ -16,27 +16,23 @@ import re
 
 # Color letter -> console palette slot (see files/settings/console-colors).
 SLOTS = {
-    "h": 3,   # hair: amber
-    "f": 15,  # face outline
-    "e": 15,  # closed eyes
-    "p": 9,   # blush
-    "m": 1,   # "w" smile
-    "c": 10,  # cursor hair clip
-    "k": 11,  # key
-    "s": 7,   # hoodie
-    "B": 15,  # the (empty) speech bubble
+    "r": 3,   # rock: amber
+    "s": 15,  # snow
+    "f": 1,   # summit flag
+    "p": 7,   # flag pole
+    "y": 11,  # stars
+    "g": 7,   # ground
 }
 
-# Welcome text, placed to the right of her head, under the bubble.
-TEXT_COLUMN = 30
-TEXT = {
-    6: "\x1b[1mMTplatitudes\x1b[22m, terminal edition",
-    7: "The OS lives in /core, settings in /settings,",
-    8: "your files in /users.",
-    10: "Try: wisdom, optimize, activity",
-    11: "To leave: elevate poweroff",
-}
-PLAIN = {k: re.sub(r"\x1b\[[0-9;]*m", "", v) for k, v in TEXT.items()}
+# Welcome text, below the mountain.
+TEXT = [
+    "",
+    "  \x1b[1mMTplatitudes\x1b[22m (Mt. Platitudes), terminal edition",
+    "  The OS lives in /core, settings in /settings, your files in /users.",
+    "  Try: wisdom, optimize, activity.  To leave: elevate poweroff",
+    "",
+]
+PLAIN = [re.sub(r"\x1b\[[0-9;]*m", "", t) for t in TEXT]
 
 palette = {}
 for line in open("files/settings/console-colors"):
@@ -44,9 +40,9 @@ for line in open("files/settings/console-colors"):
     if m:
         palette[int(m.group(1))] = tuple(int(m.group(2)[i:i + 2], 16) for i in (0, 2, 4))
 
-art = open("branding/emti.txt").read().rstrip("\n").split("\n")
-colors = open("branding/emti.colors").read().rstrip("\n").split("\n")
-assert len(art) == len(colors), "emti.txt and emti.colors need the same number of lines"
+art = open("branding/mountain.txt").read().rstrip("\n").split("\n")
+colors = open("branding/mountain.colors").read().rstrip("\n").split("\n")
+assert len(art) == len(colors), "mountain.txt and mountain.colors need the same number of lines"
 
 
 def vt(slot):
@@ -74,10 +70,9 @@ def render(color, text):
             row += ch
         if color:
             row += "\x1b[0m"
-        if i in text:
-            row += " " * max(1, TEXT_COLUMN - len(line)) + text[i]
-        out.append(row.rstrip() if not color else row)
-    return "\n".join(out) + "\n\n"
+        out.append(row if color else row.rstrip())
+    out.extend(text)
+    return "\n".join(out) + "\n"
 
 
 open("files/core/share/welcome.vt", "w").write(render(vt, TEXT))

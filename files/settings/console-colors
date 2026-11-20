@@ -2,18 +2,18 @@
 # One per line: slot number, then the color as RRGGBB. Slot 0 is the
 # background and 7 the normal text color. Change any of them freely.
 0  1B1D2B   black (background)
-1  E06C75   red (Emti's smile)
+1  E06C75   red (summit flag)
 2  98C379   green
-3  F5A524   amber (Emti's hair)
+3  F5A524   amber (the mountain)
 4  5A6FA8   blue
 5  C678DD   magenta
 6  56B6C2   cyan
-7  D6D8E7   white (text, Emti's hoodie)
+7  D6D8E7   white (text)
 8  454B6B   bright black
-9  FF9EB0   bright red (Emti's blush)
-10 B6FFE0   bright green (Emti's cursor clip)
-11 FFD166   bright yellow (Emti's key)
+9  FF9EB0   bright red
+10 B6FFE0   bright green
+11 FFD166   bright yellow (stars)
 12 7FA8E0   bright blue
 13 FF8AD8   bright magenta
 14 7EE6D6   bright cyan
-15 FFF4EC   bright white (Emti's face, bubble)
+15 FFF4EC   bright white (snow)

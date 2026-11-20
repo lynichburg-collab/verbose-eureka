@@ -1,4 +1,4 @@
-<img src="branding/icon.png" width="96" align="right" alt="Emti">
+<img src="branding/icon.png" width="96" align="right" alt="Mt. Platitudes">
 
 # MTplatitudes
 
@@ -162,13 +162,13 @@ getting root hard; the logs make it noisy. While the OS runs from memory
 setup appears each time. Planned: an outbound network allowlist, and (with
 the installer) disk encryption, locked boot options and Secure Boot.
 
-## Mascot
+## Logo
 
-**Emti** (from "MT", as in empty) is endlessly confident and says absolutely
-nothing; her speech bubble is always empty. Amber hair, like an old
-amber-screen terminal. She greets you after signing in, as ASCII art. Artwork, the pixel version and how to
-regenerate the console art are in [`branding/`](branding/README.md). The
-console's 16-color theme is in `/settings/console-colors`.
+"MT" is also short for *Mount*: the logo is **Mt. Platitudes**, an amber
+snow-capped mountain whose summit flag says nothing. It greets you after
+signing in as colored ASCII art. Art, icon and how to regenerate the console
+version are in [`branding/`](branding/README.md). The console's 16-color theme
+is in `/settings/console-colors`.
 
 ## Platitudes
 
@@ -247,7 +247,7 @@ reassembles the root filesystem only, and `./forge clean` deletes build output.
 | `src/auth/` | signin, elevate and accounts |
 | `src/firewall/` | firewall |
 | `files/` | Files copied as-is into the OS (settings, scripts, welcome) |
-| `branding/` | Emti, the mascot: artwork, icon, pixel version |
+| `branding/` | The Mt. Platitudes logo: ASCII art, icon |
 | `.github/workflows/` | CI: build and boot test on every push |
 
 ## Roadmap
