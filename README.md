@@ -211,6 +211,12 @@ Tripwires notice things; they don't stop a targeted attacker. Keeping the
 kernel and browser up to date matters more. Expect a harmless hit if you type
 `sudo` out of habit or search the whole disk with `grep -r`.
 
+## Trying it
+
+Run it in your browser without installing anything: open a GitHub
+Codespace on this repository and run `./forge try`, which boots the newest
+build that passed GitHub's checks. Step by step: [TRYING.md](TRYING.md).
+
 ## Building
 
 ### On GitHub (no setup)
@@ -236,6 +242,9 @@ Then:
 ./forge run      # boot it in QEMU and use it (Ctrl-A then X to quit)
 ```
 
+`./forge try` skips building: it downloads the latest GitHub build and runs
+it (needs the GitHub CLI, `gh`, signed in).
+
 Other commands: `./forge <part>` rebuilds one part, `./forge image`
 reassembles the root filesystem only, and `./forge clean` deletes build output.
 
@@ -257,6 +266,7 @@ reassembles the root filesystem only, and `./forge clean` deletes build output.
 | `files/` | Files copied as-is into the OS (settings, scripts, welcome) |
 | `branding/` | The Mt. Platitudes logo: ASCII art, icon |
 | `.github/workflows/` | CI: build and boot test on every push |
+| `.devcontainer/`, `TRYING.md` | Codespace setup for trying the OS in a browser |
 
 ## Roadmap
 

@@ -6,6 +6,7 @@
 #   ./forge image      reassemble the root filesystem and initramfs only
 #   ./forge test       boot the result in QEMU and run the checkup
 #   ./forge run        boot the result in QEMU interactively (Ctrl-A X quits)
+#   ./forge try        download the latest build that passed on GitHub and run it
 #   ./forge clean      delete build output, keep downloaded sources
 #   ./forge distclean  delete everything, including downloaded sources
 #
@@ -205,6 +206,27 @@ cmd_run() {
     exec $(qemu_cmd) -append "console=ttyS0 rdinit=/core/cmd/keeper"
 }
 
+# Fetch the newest kernel + root filesystem that GitHub built and tested, so
+# you can try the OS without building anything (e.g. in a Codespace).
+cmd_try() {
+    command -v gh >/dev/null 2>&1 || die "needs the GitHub CLI (gh): https://cli.github.com"
+    command -v qemu-system-x86_64 >/dev/null 2>&1 || die "needs QEMU (qemu-system-x86)"
+    local repo run
+    repo="${GITHUB_REPOSITORY:-$(git -C "$ROOT" remote get-url origin | sed -E 's#.*github.com[:/]##; s#\.git$##')}"
+    run="$(gh run list -R "$repo" --workflow build --branch main --status success --limit 1 \
+           --json databaseId -q '.[0].databaseId')"
+    [ -n "$run" ] || die "no successful GitHub build found yet"
+    log "downloading GitHub build $run"
+    rm -rf "$OUT.download"
+    gh run download "$run" -R "$repo" -D "$OUT.download" || die "download failed (your previous build in out/ is untouched)"
+    rm -rf "$OUT"
+    mkdir -p "$OUT"
+    find "$OUT.download" -type f -exec mv {} "$OUT/" \;
+    rm -rf "$OUT.download"
+    [ -f "$OUT/kernel" ] && [ -f "$OUT/rootfs.cpio.gz" ] || die "that build has no kernel or root filesystem"
+    cmd_run
+}
+
 cmd_test() {
     local log_file="$OUT/boot-test.log"
     log "boot test (log: $log_file)"
@@ -234,6 +256,7 @@ main() {
         image)     need_tools; assemble_rootfs; make_image ;;
         test)      cmd_test ;;
         run)       cmd_run ;;
+        try)       cmd_try ;;
         clean)     rm -rf "$BUILDS" "$ROOTFS" "$SYSROOT" "$OUT" "$WORK/initramfs.list" ;;
         distclean) rm -rf "$WORK" "$OUT" ;;
         *)

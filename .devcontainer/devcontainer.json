@@ -1,0 +1,14 @@
+{
+  "name": "MTplatitudes",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "postCreateCommand": "sudo apt-get update -qq && sudo apt-get install -y -qq qemu-system-x86 musl-tools bc flex bison libelf-dev libssl-dev cpio rsync kmod",
+  "postStartCommand": "if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi; echo; echo 'Try MTplatitudes:  ./forge try    (Ctrl-A then X to quit)'",
+  "customizations": {
+    "codespaces": {
+      "openFiles": ["TRYING.md"]
+    }
+  }
+}
